@@ -1,9 +1,11 @@
 "use client";
 
 import { Bell, Search, User, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 export function Header() {
+  const { data: session } = useSession();
+
   return (
     <header className="h-16 bg-header text-white flex items-center justify-between px-6">
       <div className="flex-1 max-w-md">
@@ -24,7 +26,7 @@ export function Header() {
         </button>
         <div className="flex items-center gap-2">
           <User className="w-5 h-5" />
-          <span className="text-sm">J. Miller</span>
+          <span className="text-sm">{session?.user?.name || "Usuario"}</span>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}

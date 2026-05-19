@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type NavItem = {
   label: string;
@@ -19,16 +20,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Configuración", href: "/settings", icon: "Settings" },
 ];
 
-export const useSidebarStore = create<{
-  isCollapsed: boolean;
-  activeItem: string;
-  toggle: () => void;
-  setActiveItem: (item: string) => void;
-}>((set) => ({
-  isCollapsed: false,
-  activeItem: "/dashboard",
-  toggle: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
-  setActiveItem: (item) => set({ activeItem: item }),
-}));
+export const useSidebarStore = create(
+  persist(
+    (set) => ({
+      isCollapsed: false,
+      toggle: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
+    }),
+    { name: "metalflow-sidebar" }
+  )
+);
 
 export { NAV_ITEMS };
