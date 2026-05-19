@@ -30,9 +30,9 @@ export function Sidebar() {
         isCollapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="h-16 flex items-center justify-center border-b border-white/10">
+      <div className="h-20 flex items-center justify-center border-b border-white/10">
         {!isCollapsed && (
-          <span className="font-bold text-xl">MetalFlow</span>
+          <span className="font-bold text-2xl tracking-tight">MetalFlow</span>
         )}
       </div>
 
@@ -45,13 +45,13 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 text-sm transition-colors",
+                "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors",
                 isActive
                   ? "bg-primary text-white"
-                  : "text-white/70 hover:bg-white/10"
+                  : "text-white/80 hover:bg-white/10"
               )}
             >
-              <Icon className="w-5 h-5 shrink-0" />
+              <Icon className="w-6 h-6 shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -60,9 +60,13 @@ export function Sidebar() {
 
       <button
         onClick={toggle}
-        className="p-4 border-t border-white/10 text-white/70 hover:text-white transition-colors"
+        className="h-16 border-t border-white/10 text-white/70 hover:text-white transition-colors flex items-center justify-center hover:bg-white/5"
       >
-        {isCollapsed ? <ChevronRight className="w-5 h-5 mx-auto" /> : <ChevronLeft className="w-5 h-5" />}
+        {isCollapsed ? (
+          <ChevronRight className="w-6 h-6" />
+        ) : (
+          <ChevronLeft className="w-6 h-6" />
+        )}
       </button>
     </aside>
   );
