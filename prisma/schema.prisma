@@ -26,7 +26,6 @@ model User {
   auditLogs       AuditLog[]
   activityLogs    ActivityLog[]
   notifications   Notification[]
-  fileAttachments FileAttachment[]
 
   // Inverse relations for createdBy from other models
   createdClients    Client[]         @relation("ClientCreator")
@@ -216,6 +215,8 @@ model WorkOrderStage {
   startedAt   DateTime?   @map("started_at")
   completedAt DateTime?   @map("completed_at")
   notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
@@ -229,12 +230,14 @@ enum StageStatus {
 }
 
 model WorkOrderMaterial {
-  id          String  @id @default(uuid())
-  workOrderId String  @map("work_order_id")
+  id          String    @id @default(uuid())
+  workOrderId String    @map("work_order_id")
   material    String
-  quantity    Decimal @db.Decimal(10, 2)
+  quantity    Decimal   @db.Decimal(10, 2)
   unit        String
   notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
@@ -426,9 +429,7 @@ model FileAttachment {
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
-  uploadedBy User    @relation("FileUploader", fields: [uploadedById], references: [id])
-  user       User?   @relation(fields: [userId], references: [id])
-  userId     String?
+  uploadedBy User @relation("FileUploader", fields: [uploadedById], references: [id])
 
   @@map("file_attachments")
 }
