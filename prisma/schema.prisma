@@ -1,13 +1,448 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Base ───────────────────────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  password    String
+  name        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+
+  createdBy       User?            @relation("CreatedBy", fields: [createdById], references: [id])
+  createdUsers    User[]           @relation("CreatedBy")
+  roles           UserRole[]
+  auditLogs       AuditLog[]
+  activityLogs    ActivityLog[]
+  notifications   Notification[]
+  fileAttachments FileAttachment[]
+
+  // Inverse relations for createdBy from other models
+  createdClients    Client[]         @relation("ClientCreator")
+  createdQuotations Quotation[]      @relation("QuotationCreator")
+  createdSuppliers  Supplier[]       @relation("SupplierCreator")
+  createdWorkOrders WorkOrder[]      @relation("WorkOrderCreator")
+  createdPurchases  Purchase[]       @relation("PurchaseCreator")
+  createdInvoices   Invoice[]        @relation("InvoiceCreator")
+  createdPayments   Payment[]        @relation("PaymentCreator")
+  uploadedFiles     FileAttachment[] @relation("FileUploader")
+
+  @@map("users")
+}
+
+model Role {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  permissions Permission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id       String @id @default(uuid())
+  resource String
+  action   String
+  roleId   String @map("role_id")
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource, action])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// ─── Business ───────────────────────────────────────────────────────────
+
+model Client {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  contact     String?
+  email       String?
+  phone       String?
+  address     String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+
+  createdBy  User?       @relation("ClientCreator", fields: [createdById], references: [id])
+  quotations Quotation[]
+  workOrders WorkOrder[]
+  invoices   Invoice[]
+
+  @@map("clients")
+}
+
+model Quotation {
+  id          String          @id @default(uuid())
+  number      String          @unique
+  clientId    String          @map("client_id")
+  status      QuotationStatus
+  validUntil  DateTime        @map("valid_until")
+  subtotal    Decimal         @db.Decimal(12, 2)
+  tax         Decimal         @db.Decimal(12, 2)
+  total       Decimal         @db.Decimal(12, 2)
+  notes       String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  deletedAt   DateTime?       @map("deleted_at")
+  createdById String?         @map("created_by_id")
+
+  createdBy  User?           @relation("QuotationCreator", fields: [createdById], references: [id])
+  client     Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  items      QuotationItem[]
+  workOrders WorkOrder[]
+
+  @@map("quotations")
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  quotationId String    @map("quotation_id")
+  description String
+  quantity    Decimal   @db.Decimal(10, 2)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@map("quotation_items")
+}
+
+model Supplier {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  contact     String?
+  email       String?
+  phone       String?
+  address     String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+
+  createdBy User?      @relation("SupplierCreator", fields: [createdById], references: [id])
+  purchases Purchase[]
+
+  @@map("suppliers")
+}
+
+model WorkOrder {
+  id          String          @id @default(uuid())
+  number      String          @unique
+  clientId    String          @map("client_id")
+  quotationId String?         @map("quotation_id")
+  title       String
+  description String?
+  status      WorkOrderStatus
+  priority    Priority
+  dueDate     DateTime        @map("due_date")
+  completedAt DateTime?       @map("completed_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  deletedAt   DateTime?       @map("deleted_at")
+  createdById String?         @map("created_by_id")
+
+  createdBy User?               @relation("WorkOrderCreator", fields: [createdById], references: [id])
+  client    Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  quotation Quotation?          @relation(fields: [quotationId], references: [id])
+  stages    WorkOrderStage[]
+  materials WorkOrderMaterial[]
+  invoices  Invoice[]
+
+  @@map("work_orders")
+}
+
+enum WorkOrderStatus {
+  TODO
+  IN_PROGRESS
+  QUALITY_CHECK
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model WorkOrderStage {
+  id          String      @id @default(uuid())
+  workOrderId String      @map("work_order_id")
+  name        String
+  status      StageStatus
+  order       Int
+  startedAt   DateTime?   @map("started_at")
+  completedAt DateTime?   @map("completed_at")
+  notes       String?
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@map("work_order_stages")
+}
+
+enum StageStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+model WorkOrderMaterial {
+  id          String  @id @default(uuid())
+  workOrderId String  @map("work_order_id")
+  material    String
+  quantity    Decimal @db.Decimal(10, 2)
+  unit        String
+  notes       String?
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@map("work_order_materials")
+}
+
+model Purchase {
+  id          String         @id @default(uuid())
+  number      String         @unique
+  supplierId  String         @map("supplier_id")
+  status      PurchaseStatus
+  subtotal    Decimal        @db.Decimal(12, 2)
+  tax         Decimal        @db.Decimal(12, 2)
+  total       Decimal        @db.Decimal(12, 2)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+  createdById String?        @map("created_by_id")
+
+  createdBy User?          @relation("PurchaseCreator", fields: [createdById], references: [id])
+  supplier  Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items     PurchaseItem[]
+
+  @@map("purchases")
+}
+
+enum PurchaseStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseItem {
+  id          String   @id @default(uuid())
+  purchaseId  String   @map("purchase_id")
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  total       Decimal  @db.Decimal(12, 2)
+  received    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_items")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  number         String        @unique
+  clientId       String        @map("client_id")
+  workOrderId    String?       @map("work_order_id")
+  type           InvoiceType
+  status         InvoiceStatus
+  series         String
+  numberInSeries Int           @map("number_in_series")
+  issueDate      DateTime      @map("issue_date")
+  dueDate        DateTime      @map("due_date")
+  subtotal       Decimal       @db.Decimal(12, 2)
+  tax            Decimal       @db.Decimal(12, 2)
+  total          Decimal       @db.Decimal(12, 2)
+  paidAt         DateTime?     @map("paid_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
+  createdById    String?       @map("created_by_id")
+
+  createdBy User?         @relation("InvoiceCreator", fields: [createdById], references: [id])
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  workOrder WorkOrder?    @relation(fields: [workOrderId], references: [id])
+  items     InvoiceItem[]
+  payments  Payment[]
+
+  @@map("invoices")
+}
+
+enum InvoiceType {
+  INVOICE
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String   @map("invoice_id")
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  total       Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  number      String        @unique
+  invoiceId   String        @map("invoice_id")
+  amount      Decimal       @db.Decimal(12, 2)
+  method      PaymentMethod
+  reference   String?
+  date        DateTime
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+  createdById String?       @map("created_by_id")
+
+  createdBy User?   @relation("PaymentCreator", fields: [createdById], references: [id])
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  CARD
+}
+
+// ─── System ────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  action     String
+  resource   String
+  resourceId String   @map("resource_id")
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  deletedAt DateTime?        @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+}
+
+model FileAttachment {
+  id           String    @id @default(uuid())
+  fileName     String    @map("file_name")
+  originalName String    @map("original_name")
+  mimeType     String    @map("mime_type")
+  size         Int
+  url          String
+  entityType   String    @map("entity_type")
+  entityId     String    @map("entity_id")
+  uploadedById String    @map("uploaded_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  uploadedBy User    @relation("FileUploader", fields: [uploadedById], references: [id])
+  user       User?   @relation(fields: [userId], references: [id])
+  userId     String?
+
+  @@map("file_attachments")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String
+  details    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
 }
