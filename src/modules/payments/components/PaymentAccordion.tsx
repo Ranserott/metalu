@@ -7,9 +7,10 @@ import { SupplierDocumentSchema, SupplierDocumentInput, DOCUMENT_TYPES, PAYMENT_
 import { SupplierModal } from "./SupplierModal";
 import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronRight, Eraser, Save } from "lucide-react";
+
+type SelectedSupplier = { id: string; code: string; name: string } | null;
 
 type Props = {
   onSuccess?: () => void;
@@ -21,17 +22,20 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
   const [expanded, setExpanded] = useState(true);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<SelectedSupplier>(null);
 
   const form = useForm<SupplierDocumentInput>({
     resolver: zodResolver(SupplierDocumentSchema),
     defaultValues: {
       documentDate: new Date(),
       status: "PENDIENTE",
-      ...editData,
+      supplierId: editData?.supplierId ?? "",
+      documentType: editData?.documentType,
+      documentNumber: editData?.documentNumber ?? "",
+      amount: editData?.amount,
+      dueDate: editData?.dueDate,
     },
   });
-
-  const selectedSupplier = form.watch("supplierId");
 
   async function onSubmit(data: SupplierDocumentInput) {
     setSubmitting(true);
@@ -39,18 +43,21 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
       const url = editData ? `/api/payments/${editData.id}` : "/api/payments";
       const method = editData ? "PUT" : "POST";
 
+      const payload = {
+        ...data,
+        supplierId: selectedSupplier?.id ?? editData?.supplierId ?? data.supplierId,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Error saving");
 
-      form.reset({
-        documentDate: new Date(),
-        status: "PENDIENTE",
-      });
+      form.reset({ documentDate: new Date(), status: "PENDIENTE" });
+      setSelectedSupplier(null);
       onSuccess?.();
       if (editData) onEditClear?.();
     } finally {
@@ -59,11 +66,13 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
   }
 
   function handleSupplierSelect(supplier: { id: string; code: string; name: string }) {
-    form.setValue("supplierId", supplier.id);
+    setSelectedSupplier(supplier);
+    form.setValue("supplierId", supplier.id, { shouldValidate: true });
   }
 
   function handleClean() {
     form.reset({ documentDate: new Date(), status: "PENDIENTE" });
+    setSelectedSupplier(null);
     if (editData) onEditClear?.();
   }
 
@@ -88,16 +97,14 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
       {expanded && (
         <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            {/* RUT + Name */}
+            {/* RUT Proveedor + Name */}
             <div className="col-span-2 grid grid-cols-3 gap-2 items-end">
               <div className="col-span-2">
                 <FormField
                   label="RUT Proveedor"
-                  {...form.register("supplierId")}
-                  error={form.formState.errors.supplierId?.message}
                   readOnly
                   placeholder="Seleccione un proveedor..."
-                  value={selectedSupplier || ""}
+                  value={selectedSupplier?.code ?? ""}
                 />
               </div>
               <Button
@@ -113,7 +120,7 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
             <div>
               <label className="text-sm font-medium mb-1 block">Tipo Documento</label>
               <Select
-                value={form.watch("documentType")}
+                value={form.watch("documentType") ?? ""}
                 onValueChange={(v) => form.setValue("documentType", v as SupplierDocumentInput["documentType"])}
               >
                 <SelectTrigger>
@@ -165,7 +172,7 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
             <div>
               <label className="text-sm font-medium mb-1 block">Estado</label>
               <Select
-                value={form.watch("status")}
+                value={form.watch("status") ?? "PENDIENTE"}
                 onValueChange={(v) => form.setValue("status", v as SupplierDocumentInput["status"])}
               >
                 <SelectTrigger>

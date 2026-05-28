@@ -8,7 +8,7 @@ import { SupplierDocumentInput } from "@/modules/payments/validations/paymentSch
 type SupplierDocumentRow = {
   id: string;
   number: string;
-  supplier: { code: string; name: string } | null;
+  supplier: { id: string; code: string; name: string } | null;
   documentType: string | null;
   documentNumber: string | null;
   documentDate: Date | null;
@@ -36,7 +36,7 @@ export default function PaymentsPage() {
   function handleEdit(doc: SupplierDocumentRow) {
     setEditData({
       id: doc.id,
-      supplierId: doc.supplier?.code ?? "",
+      supplierId: doc.supplier?.id ?? "",
       documentType: doc.documentType as SupplierDocumentInput["documentType"],
       documentNumber: doc.documentNumber ?? "",
       documentDate: doc.documentDate ? new Date(doc.documentDate) : new Date(),
