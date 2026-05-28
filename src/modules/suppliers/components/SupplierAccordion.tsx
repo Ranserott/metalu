@@ -36,7 +36,11 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) throw new Error("Error saving");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Supplier save error:", errorData);
+        throw new Error("Error saving: " + JSON.stringify(errorData));
+      }
 
       form.reset({ isActive: true });
       onSuccess?.();
