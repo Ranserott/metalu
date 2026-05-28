@@ -17,9 +17,15 @@ export async function getSupplierById(id: string) {
 export async function createSupplier(data: SupplierInput, userId: string) {
   return await prisma.supplier.create({
     data: {
-      ...data,
+      name: data.name,
+      contact: data.contact,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      ciudad: data.ciudad,
+      isActive: data.isActive,
       code: await generateSupplierCode(),
-      createdById: userId,
+      createdById: userId && !userId.startsWith("temp-") ? userId : null,
     },
   });
 }

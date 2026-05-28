@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.errors }, { status: 400 });
   }
 
-  const result = await createSupplier(parsed.data, userId);
-  return NextResponse.json(result, { status: 201 });
+  try {
+    const result = await createSupplier(parsed.data, userId);
+    return NextResponse.json(result, { status: 201 });
+  } catch (error: any) {
+    console.error("Create supplier error:", error);
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 500 });
+  }
 }
