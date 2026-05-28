@@ -1,0 +1,157 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SupplierSchema, SupplierInput } from "../validations/supplierSchemas";
+import { FormField } from "@/components/forms/FormField";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronRight, Eraser, Save } from "lucide-react";
+
+type Props = {
+  onSuccess?: () => void;
+  editData?: SupplierInput & { id: string };
+  onEditClear?: () => void;
+};
+
+export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
+  const [expanded, setExpanded] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const form = useForm<SupplierInput>({
+    resolver: zodResolver(SupplierSchema),
+    defaultValues: editData || { isActive: true },
+  });
+
+  async function onSubmit(data: SupplierInput) {
+    setSubmitting(true);
+    try {
+      const url = editData ? `/api/suppliers/${editData.id}` : "/api/suppliers";
+      const method = editData ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) throw new Error("Error saving");
+
+      form.reset({ isActive: true });
+      onSuccess?.();
+      if (editData) onEditClear?.();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleClean() {
+    form.reset({ isActive: true });
+    if (editData) onEditClear?.();
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+      {/* Header bar */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-5 py-4 bg-gradient-to-r from-[#2C5282] to-[#3182CE] hover:from-[#1a365d] hover:to-[#2C5282] transition-all text-left"
+      >
+        {expanded ? (
+          <ChevronDown className="w-4 h-4 text-white" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-white" />
+        )}
+        <span className="font-semibold text-white text-sm uppercase tracking-wide">
+          {editData ? "MODIFICAR PROVEEDOR" : "INGRESAR PROVEEDOR"}
+        </span>
+      </button>
+
+      {/* Form */}
+      {expanded && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              label="NOMBRE"
+              {...form.register("name")}
+              error={form.formState.errors.name?.message}
+              placeholder="Nombre del proveedor"
+            />
+
+            <FormField
+              label="CONTACTO"
+              {...form.register("contact")}
+              placeholder="Persona de contacto"
+            />
+
+            <FormField
+              label="DIRECCIÓN"
+              {...form.register("address")}
+              placeholder="Dirección"
+            />
+
+            <FormField
+              label="CIUDAD"
+              {...form.register("ciudad")}
+              placeholder="Ciudad"
+            />
+
+            <FormField
+              label="TELÉFONO"
+              {...form.register("phone")}
+              placeholder="Teléfono"
+            />
+
+            <FormField
+              label="CELULAR"
+              {...form.register("contact")}
+              placeholder="Celular"
+            />
+
+            <FormField
+              label="EMAIL"
+              type="email"
+              {...form.register("email")}
+              error={form.formState.errors.email?.message}
+              placeholder="email@ejemplo.com"
+            />
+
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id="isActive"
+                {...form.register("isActive")}
+                className="w-4 h-4 text-[#2C5282] border-gray-300 rounded focus:ring-[#2C5282]"
+              />
+              <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                Proveedor activo
+              </label>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              onClick={handleClean}
+            >
+              <Eraser className="w-4 h-4 mr-2" />
+              LIMPIAR
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-gradient-to-r from-[#3182CE] to-[#2C5282] hover:from-[#2C5282] hover:to-[#1a365d] text-white shadow-md"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {submitting ? "GRABANDO..." : "GRABAR"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
