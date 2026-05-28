@@ -1,74 +1,74 @@
 import { prisma } from "@/lib/prisma/prisma";
-import { PaymentInput } from "../validations/paymentSchemas";
+import { SupplierDocumentInput } from "../validations/paymentSchemas";
 
-const mockPayments = [
-  {
-    id: "1",
-    number: "PAG-2024-001",
-    invoiceId: "1",
-    amount: "5000.00",
-    method: "BANK_TRANSFER",
-    reference: "TRX-12345",
-    date: new Date("2024-12-15"),
-    notes: "Pago parcial",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+export type SupplierDocument = {
+  id: string;
+  number: string;
+  supplierId: string | null;
+  supplier: { id: string; code: string; name: string } | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  documentDate: Date | null;
+  dueDate: Date | null;
+  amount: import("@prisma/client/runtime/library").Decimal;
+  status: string;
+  cancellationReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export async function getPayments() {
-  try {
-    return await prisma.payment.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { invoice: { select: { number: true } } },
-    });
-  } catch {
-    return mockPayments;
-  }
+export async function getSupplierDocuments() {
+  return await prisma.payment.findMany({
+    where: {
+      deletedAt: null,
+      supplierId: { not: null },
+    },
+    include: { supplier: { select: { id: true, code: true, name: true } } },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
-export async function getPaymentById(id: string) {
-  try {
-    return await prisma.payment.findUnique({
-      where: { id, deletedAt: null },
-    });
-  } catch {
-    return mockPayments.find((p) => p.id === id) || null;
-  }
+export async function getSupplierDocumentById(id: string) {
+  return await prisma.payment.findUnique({
+    where: { id, deletedAt: null },
+    include: { supplier: { select: { id: true, code: true, name: true } } },
+  });
 }
 
-export async function createPayment(data: PaymentInput, userId: string) {
-  try {
-    return await prisma.payment.create({
-      data: {
-        ...data,
-        createdById: userId,
-      } as any,
-    });
-  } catch {
-    return { ...data, id: Date.now().toString(), createdAt: new Date(), updatedAt: new Date() };
-  }
+export async function createSupplierDocument(data: SupplierDocumentInput & { number: string }, userId: string) {
+  return await prisma.payment.create({
+    data: {
+      ...data,
+      date: data.documentDate,
+      createdById: userId,
+    },
+  });
 }
 
-export async function updatePayment(id: string, data: Partial<PaymentInput>) {
-  try {
-    return await prisma.payment.update({
-      where: { id },
-      data,
-    });
-  } catch {
-    return { ...mockPayments[0], ...data, id, updatedAt: new Date() };
-  }
+export async function updateSupplierDocument(id: string, data: Partial<SupplierDocumentInput>) {
+  const updateData: any = { ...data };
+  if (data.documentDate) updateData.date = data.documentDate;
+  delete updateData.documentDate;
+
+  return await prisma.payment.update({
+    where: { id },
+    data: updateData,
+  });
 }
 
-export async function deletePayment(id: string) {
-  try {
-    return await prisma.payment.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-  } catch {
-    return { id };
-  }
+export async function cancelSupplierDocument(id: string, cancellationReason: string) {
+  return await prisma.payment.update({
+    where: { id },
+    data: {
+      status: "CANCELLED",
+      cancellationReason,
+    },
+  });
+}
+
+export async function generateDocumentNumber() {
+  const count = await prisma.payment.count({
+    where: { supplierId: { not: null } },
+  });
+  return `AP-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
 }
