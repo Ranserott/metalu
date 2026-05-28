@@ -11,22 +11,3 @@ export interface User {
   createdById: string | null;
   roles: Role[];
 }
-
-export type CreateUserInput = {
-  name: string;
-  email: string;
-  password: string;
-  roles: string[];
-};
-
-export type UpdateUserInput = {
-  name?: string;
-  email?: string;
-  isActive?: boolean;
-  roles?: string[];
-};
-
-export type ChangePasswordInput = {
-  currentPassword?: string;
-  newPassword: string;
-};

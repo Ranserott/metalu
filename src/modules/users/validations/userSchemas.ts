@@ -15,7 +15,7 @@ export const UpdateUserSchema = z.object({
 });
 
 export const ChangePasswordSchema = z.object({
-  currentPassword: z.string().min(6, "Mínimo 6 caracteres").optional(),
+  currentPassword: z.string().min(6, "Mínimo 6 caracteres"),
   newPassword: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
