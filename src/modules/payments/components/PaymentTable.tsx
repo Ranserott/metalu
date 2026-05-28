@@ -11,7 +11,7 @@ import { CancelModal } from "./CancelModal";
 type SupplierDocumentRow = {
   id: string;
   number: string;
-  supplier: { code: string; name: string } | null;
+  supplier: { id: string; code: string; name: string } | null;
   documentType: string | null;
   documentNumber: string | null;
   documentDate: Date | null;
@@ -38,11 +38,13 @@ export function PaymentTable({ data, onEdit, onCancelSuccess }: Props) {
 
   const columns: ColumnDef<SupplierDocumentRow>[] = [
     {
+      id: "supplierCode",
       accessorKey: "supplier",
       header: "RUT",
       cell: ({ row }) => row.original.supplier?.code ?? "—",
     },
     {
+      id: "supplierName",
       accessorKey: "supplier",
       header: "Nombre",
       cell: ({ row }) => row.original.supplier?.name ?? "—",
