@@ -163,6 +163,7 @@ model Supplier {
 
   createdBy User?      @relation("SupplierCreator", fields: [createdById], references: [id])
   purchases Purchase[]
+  payments Payment[]
 
   @@map("suppliers")
 }
@@ -347,21 +348,29 @@ model InvoiceItem {
 }
 
 model Payment {
-  id          String        @id @default(uuid())
-  number      String        @unique
-  invoiceId   String        @map("invoice_id")
-  amount      Decimal       @db.Decimal(12, 2)
-  method      PaymentMethod
-  reference   String?
-  date        DateTime
-  notes       String?
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  deletedAt   DateTime?     @map("deleted_at")
-  createdById String?       @map("created_by_id")
+  id                  String        @id @default(cuid())
+  number              String        @unique
+  invoiceId           String?       @map("invoice_id")
+  supplierId          String?       @map("supplier_id")
+  documentType        String?       @map("document_type") // FA, BO, PA, OT, CH
+  documentNumber      String?       @map("document_number")
+  documentDate        DateTime?     @map("document_date")
+  dueDate             DateTime?     @map("due_date")
+  amount              Decimal       @db.Decimal(12, 2)
+  method              PaymentMethod
+  status              String        @default("PENDIENTE") @map("status") // PENDIENTE, PAGADO, CANCELLED
+  cancellationReason  String?       @map("cancellation_reason")
+  reference           String?
+  date                DateTime
+  notes               String?
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  deletedAt           DateTime?     @map("deleted_at")
+  createdById         String?       @map("created_by_id")
 
   createdBy User?   @relation("PaymentCreator", fields: [createdById], references: [id])
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
 
   @@map("payments")
 }
