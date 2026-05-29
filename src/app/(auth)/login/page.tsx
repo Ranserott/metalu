@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const LoginSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: z.string().min(1, "Usuario requerido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField label="Email" type="email" error={form.formState.errors.email?.message} {...form.register("email")} />
+            <FormField label="Usuario" type="text" error={form.formState.errors.email?.message} {...form.register("email")} />
             <FormField label="Password" type="password" error={form.formState.errors.password?.message} {...form.register("password")} />
             {form.formState.errors.root && (
               <p className="text-sm text-red-500">{form.formState.errors.root.message}</p>
