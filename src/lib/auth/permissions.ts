@@ -4,7 +4,7 @@ type Permission = {
 };
 
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  Admin: [
+  admin: [
     { resource: "*", actions: ["create", "read", "update", "delete"] },
   ],
   Manager: [
@@ -66,7 +66,7 @@ export function isAdmin(roles: string[]): boolean {
 }
 
 export function hasAccess(roles: string[], resource: string): boolean {
-  // Admin has access to everything
+  // admin has access to everything
   if (roles.includes("admin")) return true;
 
   // For now, trabajadores only have access to dashboard
