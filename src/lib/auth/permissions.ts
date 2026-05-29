@@ -60,3 +60,17 @@ export function canAccess(role: string, resource: string, action: string): boole
   const specific = permissions.find((p) => p.resource === resource);
   return specific?.actions.includes(action as any) ?? false;
 }
+
+export function isAdmin(roles: string[]): boolean {
+  return roles.includes("admin");
+}
+
+export function hasAccess(roles: string[], resource: string): boolean {
+  // Admin has access to everything
+  if (roles.includes("admin")) return true;
+
+  // For now, trabajadores only have access to dashboard
+  if (roles.includes("trabajador") && resource === "dashboard") return true;
+
+  return false;
+}
