@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const LoginSchema = z.object({
-  email: z.string().email("Email inválido"),
+  username: z.string().min(1, "Usuario requerido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
@@ -25,13 +25,13 @@ export default function LoginPage() {
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
 
   async function onSubmit(data: LoginInput) {
     setIsLoading(true);
     const result = await signIn("credentials", {
-      email: data.email,
+      username: data.username,
       password: data.password,
       redirect: false,
     });
@@ -56,11 +56,11 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              label="Email"
-              type="email"
-              placeholder="tu@email.com"
-              error={form.formState.errors.email?.message}
-              {...form.register("email")}
+              label="Usuario"
+              type="text"
+              placeholder="admin"
+              error={form.formState.errors.username?.message}
+              {...form.register("username")}
             />
             <FormField
               label="Contraseña"
