@@ -189,15 +189,15 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Saldo Actual</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Saldo Actual (CLP)</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                       <Input
                         type="number"
-                        step="0.01"
+                        step="1"
                         {...form.register("currentBalance", { valueAsNumber: true })}
-                        placeholder="0.00"
-                        className="pl-9 text-sm"
+                        placeholder="0"
+                        className="pl-7 text-sm text-right"
                       />
                     </div>
                   </div>
