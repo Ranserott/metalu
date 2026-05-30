@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SupplierSchema, SupplierInput } from "../validations/supplierSchemas";
@@ -18,6 +18,16 @@ type Props = {
 export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
   const [expanded, setExpanded] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const accordionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editData) {
+      setExpanded(true);
+      setTimeout(() => {
+        accordionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [editData]);
 
   const form = useForm<SupplierInput>({
     resolver: zodResolver(SupplierSchema),
@@ -42,7 +52,7 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
         throw new Error("Error saving: " + JSON.stringify(errorData));
       }
 
-      form.reset({ isActive: true });
+      form.reset({ name: "", contact: "", email: "", phone: "", address: "", ciudad: "", isActive: true });
       onSuccess?.();
       if (editData) onEditClear?.();
     } finally {
@@ -51,12 +61,12 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
   }
 
   function handleClean() {
-    form.reset({ isActive: true });
+    form.reset({ name: "", contact: "", email: "", phone: "", address: "", ciudad: "", isActive: true });
     if (editData) onEditClear?.();
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+    <div ref={accordionRef} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
       {/* Header bar */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -105,12 +115,6 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
               label="TELÉFONO"
               {...form.register("phone")}
               placeholder="Teléfono"
-            />
-
-            <FormField
-              label="CELULAR"
-              {...form.register("contact")}
-              placeholder="Celular"
             />
 
             <FormField

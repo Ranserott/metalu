@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -18,22 +19,33 @@ type LoginInput = z.infer<typeof LoginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
     defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(data: LoginInput) {
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
+    setLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
 
-    if (result?.ok) {
-      router.push("/dashboard");
-    } else {
-      form.setError("root", { message: "Credenciales inválidas" });
+      console.log("Signin result:", result);
+
+      if (result?.error) {
+        form.setError("root", { message: "Credenciales inválidas" });
+      } else if (result?.ok) {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      form.setError("root", { message: "Error de conexión" });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -50,7 +62,9 @@ export default function LoginPage() {
             {form.formState.errors.root && (
               <p className="text-sm text-red-500">{form.formState.errors.root.message}</p>
             )}
-            <Button type="submit" className="w-full">Iniciar Sesión</Button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Ingresando..." : "Iniciar Sesión"}
+            </Button>
           </form>
         </CardContent>
       </Card>
