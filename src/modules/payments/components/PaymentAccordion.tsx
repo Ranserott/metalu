@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SupplierDocumentSchema, SupplierDocumentInput, DOCUMENT_TYPES, PAYMENT_STATUSES } from "../validations/paymentSchemas";
@@ -23,6 +23,16 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<SelectedSupplier>(null);
+  const accordionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editData) {
+      setExpanded(true);
+      setTimeout(() => {
+        accordionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [editData]);
 
   const form = useForm<SupplierDocumentInput>({
     resolver: zodResolver(SupplierDocumentSchema),
@@ -56,7 +66,7 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
 
       if (!res.ok) throw new Error("Error saving");
 
-      form.reset({ documentDate: new Date(), status: "PENDIENTE" });
+      form.reset({ supplierId: "", documentType: undefined, documentNumber: "", documentDate: new Date(), amount: undefined, dueDate: null, status: "PENDIENTE" });
       setSelectedSupplier(null);
       onSuccess?.();
       if (editData) onEditClear?.();
@@ -71,13 +81,13 @@ export function PaymentAccordion({ onSuccess, editData, onEditClear }: Props) {
   }
 
   function handleClean() {
-    form.reset({ documentDate: new Date(), status: "PENDIENTE" });
+    form.reset({ supplierId: "", documentType: undefined, documentNumber: "", documentDate: new Date(), amount: undefined, dueDate: null, status: "PENDIENTE" });
     setSelectedSupplier(null);
     if (editData) onEditClear?.();
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+    <div ref={accordionRef} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
       {/* Header bar */}
       <button
         onClick={() => setExpanded(!expanded)}

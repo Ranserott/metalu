@@ -98,7 +98,8 @@ export function PaymentTable({ data, onEdit, onCancelSuccess }: Props) {
         <div className="flex gap-1">
           <Button
             size="sm"
-            variant="ghost"
+            variant="outline"
+            className="border-blue-500 text-blue-500 hover:bg-blue-50"
             onClick={() => onEdit(row.original)}
           >
             <Pencil className="w-4 h-4" />

@@ -6,6 +6,8 @@ import { SupplierTable } from "@/modules/suppliers/components/SupplierTable";
 import { SupplierInput } from "@/modules/suppliers/validations/supplierSchemas";
 import { Supplier } from "@/modules/suppliers/types/supplier";
 
+console.log(">>> SuppliersPage rendering");
+
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editData, setEditData] = useState<SupplierInput & { id: string } | undefined>();
