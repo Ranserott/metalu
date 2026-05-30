@@ -80,20 +80,24 @@ model UserRole {
 // ─── Business ───────────────────────────────────────────────────────────
 
 model Client {
-  id          String    @id @default(uuid())
-  code        String    @unique
-  name        String
-  contact     String?
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-  createdById String?   @map("created_by_id")
+  id              String    @id @default(uuid())
+  code            String    @unique
+  name            String
+  contact         String?
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  notes           String?
+  giro            String?
+  oc              String?
+  lastPaymentDate DateTime? @map("last_payment_date")
+  currentBalance  Float?    @map("current_balance")
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdById     String?   @map("created_by_id")
 
   createdBy  User?       @relation("ClientCreator", fields: [createdById], references: [id])
   quotations Quotation[]

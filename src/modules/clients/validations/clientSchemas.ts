@@ -9,6 +9,10 @@ export const ClientSchema = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
   notes: z.string().optional(),
+  giro: z.string().optional(),
+  oc: z.string().optional(),
+  lastPaymentDate: z.string().optional(),
+  currentBalance: z.number().optional(),
   isActive: z.boolean().default(true),
 });
 

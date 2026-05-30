@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ClientSchema, ClientInput } from "../validations/clientSchemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, User, MapPin, Save, X } from "lucide-react";
+import { Search, User, MapPin, FileText, DollarSign, Calendar, Save, X } from "lucide-react";
 
 type ClientFormProps = {
   open: boolean;
@@ -19,7 +19,11 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<ClientInput>({
     resolver: zodResolver(ClientSchema) as any,
-    defaultValues: defaultValues || { isActive: true, code: "", name: "", contact: "", email: "", phone: "", address: "" },
+    defaultValues: defaultValues || {
+      isActive: true, code: "", name: "", contact: "", email: "",
+      phone: "", address: "", city: "", notes: "", giro: "", oc: "",
+      lastPaymentDate: "", currentBalance: 0
+    },
   });
 
   async function handleSubmit(data: ClientInput) {
@@ -89,6 +93,14 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
                       )}
                     </div>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Giro</label>
+                    <Input
+                      {...form.register("giro")}
+                      placeholder="Actividad o rubro del cliente"
+                      className="text-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -153,6 +165,45 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
 
             {/* Right Column - 1/3 */}
             <div className="space-y-6">
+              {/* Estado Financiero */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#2C5282]" />
+                  <span className="font-semibold text-sm text-gray-700">ESTADO FINANCIERO</span>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">O.C.</label>
+                    <Input
+                      {...form.register("oc")}
+                      placeholder="Orden de Compra"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Fecha Último Pago</label>
+                    <Input
+                      type="date"
+                      {...form.register("lastPaymentDate")}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Saldo Actual</label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...form.register("currentBalance", { valueAsNumber: true })}
+                        placeholder="0.00"
+                        className="pl-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Estado del Cliente */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b">
@@ -168,21 +219,6 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
                     />
                     <span className="text-sm text-gray-700">Cliente Activo</span>
                   </label>
-                </div>
-              </div>
-
-              {/* Notas */}
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b">
-                  <span className="font-semibold text-sm text-gray-700">NOTAS</span>
-                </div>
-                <div className="p-4">
-                  <textarea
-                    {...form.register("notes")}
-                    placeholder="Notas adicionales..."
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none"
-                  />
                 </div>
               </div>
             </div>

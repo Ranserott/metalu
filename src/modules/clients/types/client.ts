@@ -8,6 +8,10 @@ export type Client = {
   address: string | null;
   city: string | null;
   notes: string | null;
+  giro: string | null;
+  oc: string | null;
+  lastPaymentDate: string | null;
+  currentBalance: number | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
