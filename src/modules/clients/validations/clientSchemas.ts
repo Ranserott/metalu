@@ -7,6 +7,8 @@ export const ClientSchema = z.object({
   email: z.string().email("Email invalido").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
+  city: z.string().optional(),
+  notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 

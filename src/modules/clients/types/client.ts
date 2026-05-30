@@ -6,6 +6,8 @@ export type Client = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  city: string | null;
+  notes: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
