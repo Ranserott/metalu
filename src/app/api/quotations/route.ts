@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  console.log("[POST /api/quotations] body:", body);
   const { items, ...quotationData } = body;
   const parsed = QuotationSchema.safeParse(quotationData);
   if (!parsed.success) {
