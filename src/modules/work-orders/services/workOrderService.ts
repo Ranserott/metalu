@@ -1,76 +1,105 @@
 import { prisma } from "@/lib/prisma/prisma";
-import { WorkOrderInput } from "../validations/workOrderSchemas";
+import { WorkOrderInput, WorkOrderItemInput } from "../validations/workOrderSchemas";
 
-const mockWorkOrders = [
-  {
-    id: "1",
-    number: "OT-2024-001",
-    clientId: "1",
-    quotationId: null,
-    title: "Instalacion de ventanas",
-    description: "Instalacion de ventanas de aluminio",
-    status: "IN_PROGRESS",
-    priority: "HIGH",
-    dueDate: new Date("2024-12-20"),
-    completedAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+const includeRelations = {
+  client: { select: { id: true, name: true } },
+  materials: { orderBy: { createdAt: "asc" as const } },
+};
+
+function normalizeDates(data: any) {
+  const out: any = { ...data };
+  if (out.dueDate) out.dueDate = new Date(out.dueDate);
+  if (out.fechaTrabajo) out.fechaTrabajo = new Date(out.fechaTrabajo);
+  if (out.fechaEntrega) out.fechaEntrega = new Date(out.fechaEntrega);
+  return out;
+}
+
+function parseDecimals(data: any) {
+  const out: any = { ...data };
+  for (const k of ["neto", "descuentoPorcentaje", "subtotalAfecto", "iva", "total"]) {
+    if (out[k] !== undefined && out[k] !== null && out[k] !== "") {
+      out[k] = parseFloat(out[k]);
+    } else {
+      out[k] = null;
+    }
+  }
+  if (out.plazoDias !== undefined && out.plazoDias !== null && out.plazoDias !== "") {
+    out.plazoDias = parseInt(out.plazoDias);
+  } else {
+    out.plazoDias = null;
+  }
+  return out;
+}
 
 export async function getWorkOrders() {
-  try {
-    return await prisma.workOrder.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { client: { select: { name: true } } },
-    });
-  } catch {
-    return mockWorkOrders;
-  }
+  return await prisma.workOrder.findMany({
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    include: includeRelations,
+  });
 }
 
 export async function getWorkOrderById(id: string) {
-  try {
-    return await prisma.workOrder.findUnique({
-      where: { id, deletedAt: null },
-    });
-  } catch {
-    return mockWorkOrders.find((wo) => wo.id === id) || null;
-  }
+  return await prisma.workOrder.findUnique({
+    where: { id, deletedAt: null },
+    include: includeRelations,
+  });
 }
 
-export async function createWorkOrder(data: WorkOrderInput, userId: string) {
-  try {
-    return await prisma.workOrder.create({
-      data: {
-        ...data,
-        createdById: userId,
-      } as any,
-    });
-  } catch {
-    return { ...data, id: Date.now().toString(), createdAt: new Date(), updatedAt: new Date() };
-  }
+export async function createWorkOrder(data: WorkOrderInput, userId: string, items: WorkOrderItemInput[] = []) {
+  const number = data.number?.trim() ? data.number : await generateWorkOrderNumber();
+  const normalized = parseDecimals(normalizeDates(data));
+
+  return await prisma.workOrder.create({
+    data: {
+      ...normalized,
+      number,
+      createdById: userId,
+      materials: {
+        create: items.map((it) => ({
+          material: it.material,
+          quantity: it.quantity,
+          unit: it.unit || "UN",
+          unitPrice: it.unitPrice ?? null,
+          total: it.total ?? (it.unitPrice != null ? it.unitPrice * it.quantity : null),
+        })),
+      },
+    },
+    include: includeRelations,
+  });
 }
 
-export async function updateWorkOrder(id: string, data: Partial<WorkOrderInput>) {
-  try {
-    return await prisma.workOrder.update({
+export async function updateWorkOrder(id: string, data: Partial<WorkOrderInput>, items: WorkOrderItemInput[] = []) {
+  const normalized = parseDecimals(normalizeDates(data));
+  return await prisma.$transaction(async (tx) => {
+    await tx.workOrderMaterial.deleteMany({ where: { workOrderId: id } });
+    return await tx.workOrder.update({
       where: { id },
-      data,
+      data: {
+        ...normalized,
+        materials: {
+          create: items.map((it) => ({
+            material: it.material,
+            quantity: it.quantity,
+            unit: it.unit || "UN",
+            unitPrice: it.unitPrice ?? null,
+            total: it.total ?? (it.unitPrice != null ? it.unitPrice * it.quantity : null),
+          })),
+        },
+      },
+      include: includeRelations,
     });
-  } catch {
-    return { ...mockWorkOrders[0], ...data, id, updatedAt: new Date() };
-  }
+  });
 }
 
 export async function deleteWorkOrder(id: string) {
-  try {
-    return await prisma.workOrder.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-  } catch {
-    return { id };
-  }
+  return await prisma.workOrder.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+}
+
+export async function generateWorkOrderNumber() {
+  const count = await prisma.workOrder.count();
+  return `TRAB-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
 }

@@ -1,0 +1,15 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - heading "MetalFlow" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Sistema de gestión industrial
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: Usuario
+        - textbox "admin" [ref=e12]
+      - generic [ref=e13]:
+        - generic [ref=e14]: Contraseña
+        - textbox "••••••••" [ref=e15]
+      - button "Iniciar Sesión" [ref=e16]
+  - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]:
+    - img [ref=e23]

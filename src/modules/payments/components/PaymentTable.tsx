@@ -62,7 +62,7 @@ export function PaymentTable({ data, onEdit, onCancelSuccess }: Props) {
       header: "Fecha",
       cell: ({ row }) =>
         row.original.documentDate
-          ? new Date(row.original.documentDate).toLocaleDateString()
+          ? new Date(row.original.documentDate).toLocaleDateString("es-CL")
           : "—",
     },
     {
@@ -79,7 +79,7 @@ export function PaymentTable({ data, onEdit, onCancelSuccess }: Props) {
       header: "Vencimiento",
       cell: ({ row }) =>
         row.original.dueDate
-          ? new Date(row.original.dueDate).toLocaleDateString()
+          ? new Date(row.original.dueDate).toLocaleDateString("es-CL")
           : "—",
     },
     {

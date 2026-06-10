@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const LoginSchema = z.object({
-  email: z.string().min(1, "Usuario requerido"),
+  username: z.string().min(1, "Usuario requerido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
@@ -19,51 +19,71 @@ type LoginInput = z.infer<typeof LoginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const [isLoading, setIsLoading] = useState(false);
+  const [csrfToken, setCsrfToken] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/auth/csrf")
+      .then((res) => res.json())
+      .then((data) => setCsrfToken(data.csrfToken));
+  }, []);
+
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
 
   async function onSubmit(data: LoginInput) {
-    setLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+    setIsLoading(true);
+    const result = await signIn("credentials", {
+      username: data.username,
+      password: data.password,
+      csrfToken,
+      redirect: false,
+    });
+    setIsLoading(false);
 
-      console.log("Signin result:", result);
-
-      if (result?.error) {
-        form.setError("root", { message: "Credenciales inválidas" });
-      } else if (result?.ok) {
-        router.push("/dashboard");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      form.setError("root", { message: "Error de conexión" });
-    } finally {
-      setLoading(false);
+    if (result?.ok) {
+      router.push(callbackUrl);
+    } else {
+      form.setError("root", { message: "Credenciales inválidas" });
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-[400px]">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl text-primary">MetalFlow</CardTitle>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#101D2D] to-[#1a2d3f]">
+      <Card className="w-[400px] border-[#004C63]">
+        <CardHeader className="space-y-4 pb-4">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold text-[#004C63]">Metalurgica</h1>
+            <p className="text-sm text-gray-500">Sistema de gestión industrial</p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField label="Usuario" type="text" error={form.formState.errors.email?.message} {...form.register("email")} />
-            <FormField label="Password" type="password" error={form.formState.errors.password?.message} {...form.register("password")} />
+            <FormField
+              label="Usuario"
+              type="text"
+              placeholder="admin"
+              error={form.formState.errors.username?.message}
+              {...form.register("username")}
+            />
+            <FormField
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              error={form.formState.errors.password?.message}
+              {...form.register("password")}
+            />
             {form.formState.errors.root && (
-              <p className="text-sm text-red-500">{form.formState.errors.root.message}</p>
+              <p className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded">
+                {form.formState.errors.root.message}
+              </p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Ingresando..." : "Iniciar Sesión"}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
           </form>
         </CardContent>

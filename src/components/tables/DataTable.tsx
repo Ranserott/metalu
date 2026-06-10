@@ -41,7 +41,7 @@ export function DataTable<T>({ columns, data, onRowClick }: DataTableProps<T>) {
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gradient-to-r from-[#2C5282] to-[#3182CE]">
+              <TableRow key={headerGroup.id} className="bg-gradient-to-r from-[var(--theme-dark)] to-[var(--theme-primary)]">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}

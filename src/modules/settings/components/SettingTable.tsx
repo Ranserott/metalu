@@ -20,7 +20,7 @@ export const columns: ColumnDef<Setting>[] = [
   {
     accessorKey: "updatedAt",
     header: "Actualizado",
-    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleDateString(),
+    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleDateString("es-CL"),
   },
 ];
 

@@ -30,7 +30,7 @@ async function main() {
     create: {
       email: "admin@metalflow.com",
       password: hashedPassword,
-      name: "Administrador",
+      name: "admin",
       isActive: true,
       roles: {
         create: { roleId: adminRole.id },

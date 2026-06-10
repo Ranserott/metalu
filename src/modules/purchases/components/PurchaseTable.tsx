@@ -35,7 +35,7 @@ export const columns: ColumnDef<Purchase>[] = [
   {
     accessorKey: "createdAt",
     header: "Fecha",
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString("es-CL"),
   },
 ];
 

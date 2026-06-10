@@ -21,7 +21,7 @@ export const columns: ColumnDef<Report>[] = [
   {
     accessorKey: "createdAt",
     header: "Creado",
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString("es-CL"),
   },
 ];
 

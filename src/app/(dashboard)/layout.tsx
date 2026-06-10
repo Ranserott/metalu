@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 
@@ -9,5 +10,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <ThemeProvider>
+      <AppShell>{children}</AppShell>
+    </ThemeProvider>
+  );
 }

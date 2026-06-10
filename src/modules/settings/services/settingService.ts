@@ -4,7 +4,7 @@ const mockSettings = [
   {
     id: "1",
     key: "company_name",
-    value: "MetalFlow ERP",
+    value: "Metalurgica",
     description: "Nombre de la empresa",
     updatedAt: new Date(),
   },

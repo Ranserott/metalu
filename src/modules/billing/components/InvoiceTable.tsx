@@ -39,7 +39,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     accessorKey: "dueDate",
     header: "Vencimiento",
-    cell: ({ row }) => new Date(row.original.dueDate).toLocaleDateString(),
+    cell: ({ row }) => new Date(row.original.dueDate).toLocaleDateString("es-CL"),
   },
 ];
 

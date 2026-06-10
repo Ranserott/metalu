@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
+import { getWorkOrderById, updateWorkOrder, deleteWorkOrder } from "@/modules/work-orders/services/workOrderService";
+import { WorkOrderSchema } from "@/modules/work-orders/validations/workOrderSchemas";
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const workOrder = await getWorkOrderById(id);
+  if (!workOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json(workOrder);
+}
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const body = await req.json();
+  const { items, ...workOrderData } = body;
+  const parsed = WorkOrderSchema.partial().safeParse(workOrderData);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  try {
+    const result = await updateWorkOrder(id, parsed.data, items || []);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  await deleteWorkOrder(id);
+  return NextResponse.json({ success: true });
+}

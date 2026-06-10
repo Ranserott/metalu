@@ -70,7 +70,7 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
       {/* Header bar */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-5 py-4 bg-gradient-to-r from-[#2C5282] to-[#3182CE] hover:from-[#1a365d] hover:to-[#2C5282] transition-all text-left"
+        className="w-full flex items-center gap-2 px-5 py-4 bg-gradient-to-r from-[var(--theme-dark)] to-[var(--theme-primary)] hover:from-[var(--theme-darker)] hover:to-[var(--theme-dark)] transition-all text-left"
       >
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-white" />
@@ -130,7 +130,7 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
                 type="checkbox"
                 id="isActive"
                 {...form.register("isActive")}
-                className="w-4 h-4 text-[#2C5282] border-gray-300 rounded focus:ring-[#2C5282]"
+                className="w-4 h-4 text-[var(--theme-dark)] border-gray-300 rounded focus:ring-[var(--theme-dark)]"
               />
               <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
                 Proveedor activo
@@ -152,7 +152,7 @@ export function SupplierAccordion({ onSuccess, editData, onEditClear }: Props) {
             <Button
               type="submit"
               disabled={submitting}
-              className="bg-gradient-to-r from-[#3182CE] to-[#2C5282] hover:from-[#2C5282] hover:to-[#1a365d] text-white shadow-md"
+              className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)] hover:from-[var(--theme-dark)] hover:to-[var(--theme-darker)] text-white shadow-md"
             >
               <Save className="w-4 h-4 mr-2" />
               {submitting ? "GRABANDO..." : "GRABAR"}

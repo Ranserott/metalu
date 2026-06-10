@@ -46,17 +46,24 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: "payments", actions: ["create", "read", "update"] },
     { resource: "reports", actions: ["read"] },
   ],
+  Empleado: [
+    { resource: "dashboard", actions: ["read"] },
+    { resource: "clients", actions: ["create", "read", "update"] },
+    { resource: "quotations", actions: ["create", "read", "update"] },
+    { resource: "work-orders", actions: ["create", "read", "update"] },
+    { resource: "purchases", actions: ["create", "read", "update"] },
+    { resource: "reports", actions: ["read"] },
+    { resource: "settings", actions: ["read"] },
+  ],
 };
 
 export function canAccess(role: string, resource: string, action: string): boolean {
   const permissions = ROLE_PERMISSIONS[role];
   if (!permissions) return false;
 
-  // Wildcard grants all permissions
   const wildcard = permissions.find((p) => p.resource === "*");
   if (wildcard) return wildcard.actions.includes(action as any);
 
-  // Check specific resource permission
   const specific = permissions.find((p) => p.resource === resource);
   return specific?.actions.includes(action as any) ?? false;
 }
