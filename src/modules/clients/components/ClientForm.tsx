@@ -38,12 +38,19 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, client
     setSubmitting(true);
     try {
       if (editMode && clientId) {
-        await onSubmit(data);
+        const res = await fetch(`/api/clients/${clientId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error("Error al actualizar el cliente");
       } else {
         await onSubmit(data);
       }
       onOpenChange(false);
       form.reset();
+    } catch (error: any) {
+      alert(error.message || "Error al guardar");
     } finally {
       setSubmitting(false);
     }
