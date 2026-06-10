@@ -67,7 +67,9 @@ All handlers validate `session?.user` and return 401 if missing. Errors return 5
 - `src/modules/clients/components/ClientDetailModal.tsx` — read-only modal. Fetches one client via `GET /api/clients/[id]`. Two-column layout:
   - Left: code, name, contact, email, phone, address, city, giro, OC
   - Right: notes (full-width), last payment date, current balance, isActive badge, createdAt, updatedAt, "Creado por: {user}"
-  - Bottom: two sections titled "Últimas cotizaciones" and "Últimos pagos". Each is a simple list showing the most recent 10 records (number/code, status badge, amount, due date or creation date). Each row links to the full record. Empty state when there's nothing to show ("Sin cotizaciones aún" / "Sin pagos registrados").
+  - Bottom: two sections titled "Últimas cotizaciones" and "Últimas facturas". Each is a simple list showing the most recent 10 records (number/code, status badge, amount, due date or creation date). Each row links to the full record. Empty state when there's nothing to show ("Sin cotizaciones aún" / "Sin facturas registradas").
+
+**Note:** the original spec mentioned "Últimos pagos" but the data model has no direct client→payment relation. `Payment` in this codebase is for supplier-side payments (FA, BO, PA, OT, CH — tax documents with `supplierId`). The client-side payment tracking lives on the `Invoice` (via `paidAt`). The modal therefore shows recent **invoices** instead, which is the closest concept to "pagos del cliente" given the schema.
 
 - `src/components/ui/confirm-dialog.tsx` — generic confirm dialog. Props: `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `cancelLabel`, `variant` ('default' | 'destructive'), `onConfirm`. Reusable for future flows.
 

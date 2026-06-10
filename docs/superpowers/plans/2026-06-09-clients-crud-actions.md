@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add view details, edit, and activate/deactivate actions to the clients table at `/clients`, with a read-only detail modal (including last 10 quotations and last 10 payments) and a generic reusable ConfirmDialog.
+**Goal:** Add view details, edit, and activate/deactivate actions to the clients table at `/clients`, with a read-only detail modal (including last 10 quotations and last 10 invoices) and a generic reusable ConfirmDialog.
+
+**Note on data model:** The `Payment` model in this codebase is for supplier-side payments (FA, BO, PA, OT, CH — tax documents with `supplierId`). It has no `clientId` relation. The client-side "payment" concept lives on the `Invoice` (via `paidAt`). The detail modal therefore shows recent **invoices** (not payments) — that's the closest equivalent for "pagos del cliente" given the schema.
 
 **Architecture:** Backend gets new `GET /api/clients/[id]` and `PATCH /api/clients/[id]` endpoints. The existing `GET /api/clients` accepts a new `?activeOnly=true` query param so the table shows all clients while pickers (ClientModal in quotations/work-orders) only show active ones. Frontend adds an "Acciones" column with three icons (Eye / Pencil / Power) inline. A new `ClientDetailModal` displays full client info + recent records. The existing `ClientForm` is extended with edit mode.
 
@@ -26,7 +28,7 @@
 - `src/app/api/clients/route.ts` — `GET` accepts `?activeOnly=true` query param
 - `src/modules/clients/components/ClientForm.tsx` — supports edit mode (title, button, PATCH, form reset on defaultValues change)
 - `src/modules/clients/components/ClientTable.tsx` — adds Acciones column, removes row-click, integrates the three modals
-- `src/modules/clients/types/client.ts` — adds `createdBy`, `recentQuotations`, `recentPayments`, `updateClientInput` types
+- `src/modules/clients/types/client.ts` — adds `createdBy`, `recentQuotations`, `recentInvoices`, `updateClientInput` types
 - `src/modules/quotations/components/ClientModal.tsx` — calls `/api/clients?activeOnly=true` to filter inactive clients
 
 ---
@@ -52,10 +54,11 @@ export async function getClientById(id: string) {
         take: 10,
         select: { id: true, number: true, status: true, total: true, createdAt: true },
       },
-      payments: {
-        orderBy: { documentDate: "desc" },
+      invoices: {
+        where: { deletedAt: null },
+        orderBy: { issueDate: "desc" },
         take: 10,
-        select: { id: true, number: true, status: true, amount: true, dueDate: true, documentDate: true },
+        select: { id: true, number: true, status: true, total: true, issueDate: true, dueDate: true },
       },
     },
   });
@@ -376,7 +379,7 @@ export type Client = {
   updatedAt: Date;
   createdBy?: { name: string } | null;
   recentQuotations?: QuotationSummary[];
-  recentPayments?: PaymentSummary[];
+  recentInvoices?: InvoiceSummary[];
 };
 
 export type QuotationSummary = {
@@ -387,16 +390,16 @@ export type QuotationSummary = {
   createdAt: Date;
 };
 
-export type PaymentSummary = {
+export type InvoiceSummary = {
   id: string;
   number: string;
   status: string;
-  amount: number;
+  total: number;
+  issueDate: Date;
   dueDate: Date | null;
-  documentDate: Date | null;
 };
 
-export type ClientUpdateInput = Partial<Omit<Client, "id" | "createdAt" | "updatedAt" | "createdBy" | "recentQuotations" | "recentPayments">>;
+export type ClientUpdateInput = Partial<Omit<Client, "id" | "createdAt" | "updatedAt" | "createdBy" | "recentQuotations" | "recentInvoices">>;
 ```
 
 - [ ] **Step 2: Verify TypeScript compiles**
@@ -434,7 +437,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Client, QuotationSummary, PaymentSummary } from "../types/client";
+import { Client, QuotationSummary, InvoiceSummary } from "../types/client";
 import {
   User,
   MapPin,
@@ -569,11 +572,11 @@ export function ClientDetailModal({ open, onOpenChange, clientId }: Props) {
               />
               <RecentSection
                 icon={Receipt}
-                title="Últimos pagos"
-                empty="Sin pagos registrados"
-                items={client.recentPayments ?? []}
-                renderItem={(p) => (
-                  <PaymentRow key={p.id} p={p} />
+                title="Últimas facturas"
+                empty="Sin facturas registradas"
+                items={client.recentInvoices ?? []}
+                renderItem={(inv) => (
+                  <InvoiceRow key={inv.id} inv={inv} />
                 )}
               />
             </div>
@@ -664,18 +667,18 @@ function QuotationRow({ q }: { q: QuotationSummary }) {
   );
 }
 
-function PaymentRow({ p }: { p: PaymentSummary }) {
+function InvoiceRow({ inv }: { inv: InvoiceSummary }) {
   return (
     <div className="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-gray-50">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-800 truncate">{p.number}</p>
+        <p className="text-sm font-semibold text-gray-800 truncate">{inv.number}</p>
         <p className="text-xs text-gray-500">
-          {p.dueDate ? `Vence: ${formatDate(p.dueDate)}` : formatDate(p.documentDate)}
+          {inv.dueDate ? `Vence: ${formatDate(inv.dueDate)}` : `Emitida: ${formatDate(inv.issueDate)}`}
         </p>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-sm font-semibold text-gray-800">{clp.format(Number(p.amount))}</p>
-        <Badge variant="secondary" className="text-[10px]">{p.status}</Badge>
+        <p className="text-sm font-semibold text-gray-800">{clp.format(Number(inv.total))}</p>
+        <Badge variant="secondary" className="text-[10px]">{inv.status}</Badge>
       </div>
     </div>
   );
@@ -1150,7 +1153,7 @@ Navigate to `http://localhost:3000/clients`. Click "Registrar Cliente", fill in 
 
 - [ ] **Step 3: Open the detail modal via the eye icon**
 
-Click the eye icon on the new client row. Verify the modal opens with all client fields populated. Scroll to "Últimas cotizaciones" and "Últimos pagos" — both should show empty states ("Sin cotizaciones aún" / "Sin pagos registrados").
+Click the eye icon on the new client row. Verify the modal opens with all client fields populated. Scroll to "Últimas cotizaciones" and "Últimas facturas" — both should show empty states ("Sin cotizaciones aún" / "Sin facturas registradas").
 
 - [ ] **Step 4: Open the edit modal via the pencil icon**
 
@@ -1206,11 +1209,11 @@ git commit -m "fix(clients): address issues found in manual verification"
 | Section 2: `?activeOnly=true` query param | Tasks 2, 9 |
 | Section 2: Service `getClients` change | Task 2 |
 | Section 2: Service `getClientById` includes | Task 1 |
-| Section 3: New `ClientDetailModal` with quotations + payments | Task 6 |
+| Section 3: New `ClientDetailModal` with quotations + invoices | Task 6 |
 | Section 3: New `ConfirmDialog` reusable | Task 4 |
 | Section 3: `ClientTable` actions column + remove row click | Task 8 |
 | Section 3: `ClientForm` edit mode | Task 7 |
-| Section 3: Types for `createdBy`, `recentQuotations`, `recentPayments` | Task 5 |
+| Section 3: Types for `createdBy`, `recentQuotations`, `recentInvoices` | Task 5 |
 | Section 4: Error handling (toast/alert) | Tasks 6, 7, 8 (use `alert()` for simplicity — toast system is out of scope) |
 | Section 5: Manual verification (10 steps) | Task 10 |
 
