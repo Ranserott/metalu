@@ -133,9 +133,12 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
   const total = taxable + tax;
 
   async function onFormSubmit(values: FormValues) {
-    const payload: FormValues = {
+    const payload = {
       ...values,
       discount: discountNum.toFixed(2),
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
+      total: total.toFixed(2),
     } as any;
     await onSubmit(payload);
   }
