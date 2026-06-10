@@ -70,6 +70,17 @@ function SectionHeader({ icon: Icon, title, action }: { icon: any; title: string
   );
 }
 
+function normalizeItems(items: any[] | undefined): Item[] {
+  if (!Array.isArray(items)) return [];
+  return items.map((it) => ({
+    id: it.id,
+    description: it.description ?? "",
+    quantity: Number(it.quantity) || 0,
+    unitPrice: Number(it.unitPrice) || 0,
+    type: (it.type === "WORK" ? "WORK" : "MATERIAL") as ItemType,
+  }));
+}
+
 export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [selectedClientName, setSelectedClientName] = useState<string>(
@@ -87,12 +98,15 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
         notes: defaultValues?.notes || "",
         discount: defaultValues?.discount || "0",
         discountType: defaultValues?.discountType || "NONE",
-        items: defaultValues?.items || [],
+        items: normalizeItems(defaultValues?.items),
       },
     });
 
+  const { fields, append, remove, replace } = useFieldArray({ control, name: "items" });
+
   useEffect(() => {
     if (defaultValues) {
+      const items = normalizeItems(defaultValues.items);
       reset({
         number: defaultValues.number || "",
         clientId: defaultValues.clientId || "",
@@ -101,13 +115,12 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
         notes: defaultValues.notes || "",
         discount: defaultValues.discount || "0",
         discountType: defaultValues.discountType || "NONE",
-        items: defaultValues.items || [],
+        items,
       });
+      replace(items);
       setSelectedClientName(defaultValues.clientName || "");
     }
-  }, [defaultValues?.number, reset]);
-
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  }, [defaultValues?.id, reset, replace]);
 
   const items = watch("items") || [];
   const discountStr = watch("discount") || "0";
