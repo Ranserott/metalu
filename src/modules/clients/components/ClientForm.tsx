@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClientSchema, ClientInput } from "../validations/clientSchemas";
@@ -13,9 +13,11 @@ type ClientFormProps = {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ClientInput) => Promise<void>;
   defaultValues?: Partial<ClientInput>;
+  clientId?: string;
+  editMode?: boolean;
 };
 
-export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: ClientFormProps) {
+export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, clientId, editMode }: ClientFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<ClientInput>({
     resolver: zodResolver(ClientSchema) as any,
@@ -26,10 +28,20 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
     },
   });
 
+  useEffect(() => {
+    if (defaultValues?.code) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues?.code, form]);
+
   async function handleSubmit(data: ClientInput) {
     setSubmitting(true);
     try {
-      await onSubmit(data);
+      if (editMode && clientId) {
+        await onSubmit(data);
+      } else {
+        await onSubmit(data);
+      }
       onOpenChange(false);
       form.reset();
     } finally {
@@ -45,8 +57,8 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
     >
       <div className="bg-white rounded-xl shadow-2xl w-[900px] max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#2C5282] to-[#3182CE] px-6 py-4 flex items-center justify-between">
-          <h2 className="text-white text-lg font-semibold">REGISTRAR CLIENTE</h2>
+        <div className="bg-gradient-to-r from-[var(--theme-dark)] to-[var(--theme-primary)] px-6 py-4 flex items-center justify-between">
+          <h2 className="text-white text-lg font-semibold">{editMode ? "EDITAR CLIENTE" : "REGISTRAR CLIENTE"}</h2>
           <button onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded p-1">
             <X className="w-5 h-5" />
           </button>
@@ -60,7 +72,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
               {/* Datos Identificatorios */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#2C5282]" />
+                  <User className="w-4 h-4 text-[var(--theme-dark)]" />
                   <span className="font-semibold text-sm text-gray-700">DATOS IDENTIFICATORIOS</span>
                 </div>
                 <div className="p-4 space-y-4">
@@ -73,7 +85,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
                           placeholder="12.345.678-9"
                           className="flex-1 text-sm"
                         />
-                        <Button type="button" size="sm" variant="outline" className="border-[#2C5282] text-[#2C5282]">
+                        <Button type="button" size="sm" variant="outline" className="border-[var(--theme-dark)] text-[var(--theme-dark)]">
                           <Search className="w-4 h-4" />
                         </Button>
                       </div>
@@ -107,7 +119,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
               {/* Contacto y Ubicación */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#2C5282]" />
+                  <MapPin className="w-4 h-4 text-[var(--theme-dark)]" />
                   <span className="font-semibold text-sm text-gray-700">CONTACTO Y UBICACIÓN</span>
                 </div>
                 <div className="p-4 space-y-4">
@@ -168,7 +180,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
               {/* Estado Financiero */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#2C5282]" />
+                  <FileText className="w-4 h-4 text-[var(--theme-dark)]" />
                   <span className="font-semibold text-sm text-gray-700">ESTADO FINANCIERO</span>
                 </div>
                 <div className="p-4 space-y-4">
@@ -215,7 +227,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
                       type="checkbox"
                       {...form.register("isActive")}
                       defaultChecked={defaultValues?.isActive ?? true}
-                      className="w-4 h-4 rounded border-gray-300 text-[#2C5282] focus:ring-[#2C5282]"
+                      className="w-4 h-4 rounded border-gray-300 text-[var(--theme-dark)] focus:ring-[var(--theme-dark)]"
                     />
                     <span className="text-sm text-gray-700">Cliente Activo</span>
                   </label>
@@ -237,10 +249,10 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues }: Clie
             <Button
               type="submit"
               disabled={submitting}
-              className="bg-gradient-to-r from-[#3182CE] to-[#2C5282] hover:from-[#2C5282] hover:to-[#1a365d] text-white"
+              className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)] hover:from-[var(--theme-dark)] hover:to-[var(--theme-darker)] text-white"
             >
               <Save className="w-4 h-4 mr-2" />
-              {submitting ? "Guardando..." : "Guardar Cliente"}
+              {submitting ? (editMode ? "Guardando..." : "Guardando...") : (editMode ? "Guardar Cambios" : "Guardar Cliente")}
             </Button>
           </div>
         </form>
