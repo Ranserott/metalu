@@ -12,6 +12,21 @@ export async function getClients() {
 export async function getClientById(id: string) {
   return prisma.client.findUnique({
     where: { id, deletedAt: null },
+    include: {
+      createdBy: { select: { name: true } },
+      quotations: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: { id: true, number: true, status: true, total: true, createdAt: true },
+      },
+      invoices: {
+        where: { deletedAt: null },
+        orderBy: { issueDate: "desc" },
+        take: 10,
+        select: { id: true, number: true, status: true, total: true, issueDate: true, dueDate: true },
+      },
+    },
   });
 }
 
