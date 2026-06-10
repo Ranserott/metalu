@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { ClientSchema } from "@/modules/clients/validations/clientSchemas";
 import { getClientById, updateClient } from "@/modules/clients/services/clientService";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -26,7 +27,14 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
     const { id } = await ctx.params;
     const body = await req.json();
-    const updated = await updateClient(id, body);
+    const parsed = ClientSchema.partial().safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos invalidos", issues: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+    const updated = await updateClient(id, parsed.data);
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error?.code === "P2025") {
