@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { getClients, createClient } from "@/modules/clients/services/clientService";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const data = await getClients();
-  return NextResponse.json(data);
+    const activeOnly = req.nextUrl.searchParams.get("activeOnly") === "true";
+    const data = await getClients({ activeOnly });
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[API /clients GET]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {

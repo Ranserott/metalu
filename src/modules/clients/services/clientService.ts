@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma/prisma";
 import { ClientInput } from "../validations/clientSchemas";
 
-export async function getClients() {
+export async function getClients(opts?: { activeOnly?: boolean }) {
   return prisma.client.findMany({
-    where: { deletedAt: null },
+    where: {
+      deletedAt: null,
+      ...(opts?.activeOnly ? { isActive: true } : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { createdBy: { select: { name: true } } },
   });
