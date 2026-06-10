@@ -21,7 +21,7 @@ export function ClientTable({ data }: { data: Client[] }) {
   const [viewId, setViewId] = useState<string | null>(null);
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [toggleClient, setToggleClient] = useState<Client | null>(null);
-  const [toggling, setToggling] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   async function handleCreateClient(data: ClientInput) {
     const res = await fetch("/api/clients", {
@@ -35,7 +35,7 @@ export function ClientTable({ data }: { data: Client[] }) {
 
   async function handleToggleConfirm() {
     if (!toggleClient) return;
-    setToggling(true);
+    setTogglingId(toggleClient.id);
     try {
       const res = await fetch(`/api/clients/${toggleClient.id}`, {
         method: "PATCH",
@@ -47,13 +47,13 @@ export function ClientTable({ data }: { data: Client[] }) {
     } catch (error: any) {
       alert(error.message || "Error");
     } finally {
-      setToggling(false);
+      setTogglingId(null);
       setToggleClient(null);
     }
   }
 
   async function doActivate(client: Client) {
-    setToggling(true);
+    setTogglingId(client.id);
     try {
       const res = await fetch(`/api/clients/${client.id}`, {
         method: "PATCH",
@@ -65,7 +65,7 @@ export function ClientTable({ data }: { data: Client[] }) {
     } catch (error: any) {
       alert(error.message || "Error");
     } finally {
-      setToggling(false);
+      setTogglingId(null);
     }
   }
 
@@ -147,6 +147,7 @@ export function ClientTable({ data }: { data: Client[] }) {
                 variant="outline"
                 className="h-8 w-8 p-0 border-green-500 text-green-600 hover:bg-green-50"
                 onClick={() => startActivate(c)}
+                disabled={togglingId === c.id}
                 title="Activar"
               >
                 <Power className="w-4 h-4" />
@@ -178,6 +179,7 @@ export function ClientTable({ data }: { data: Client[] }) {
       />
 
       <ClientForm
+        key={editClient?.id ?? "new"}
         open={editClient !== null}
         onOpenChange={(o) => !o && setEditClient(null)}
         onSubmit={async () => {}}
@@ -203,7 +205,7 @@ export function ClientTable({ data }: { data: Client[] }) {
         }
         confirmLabel="Desactivar"
         variant="destructive"
-        loading={toggling}
+        loading={togglingId !== null}
         onConfirm={handleToggleConfirm}
       />
     </>
