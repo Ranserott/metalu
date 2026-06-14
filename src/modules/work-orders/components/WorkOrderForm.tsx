@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientModal } from "@/modules/quotations/components/ClientModal";
 import { QuotationModal } from "@/modules/quotations/components/QuotationModal";
+import { EncargadoSelector } from "@/modules/encargados/components/EncargadoSelector";
 import { WorkOrderItemInput } from "../validations/workOrderSchemas";
 
 type ClientInfo = { id: string; name: string };
@@ -23,13 +24,6 @@ type LineItem = {
 };
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
-
-const ENCARGADOS = [
-  "CARLOS MENDOZA",
-  "ADMINISTRADOR",
-  "JEFE DE TALLER",
-  "SUPERVISOR",
-];
 
 const LOCALES = [
   "CASA MATRIZ",
@@ -61,7 +55,8 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
   const [nroCotizacion, setNroCotizacion] = useState("");
   const [fechaTrabajo, setFechaTrabajo] = useState("");
   const [local, setLocal] = useState("CASA MATRIZ");
-  const [encargado, setEncargado] = useState("");
+  const [encargadoId, setEncargadoId] = useState<string | null>(null);
+  const [encargadoName, setEncargadoName] = useState("");
   const [condicionesPago, setCondicionesPago] = useState("30 DÍAS CRÉDITO");
 
   const [nroFactura, setNroFactura] = useState("");
@@ -112,7 +107,8 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
     setSelectedQuotationLabel("");
     setFechaTrabajo("");
     setLocal("CASA MATRIZ");
-    setEncargado("");
+    setEncargadoId(null);
+    setEncargadoName("");
     setCondicionesPago("30 DÍAS CRÉDITO");
     setNroFactura("");
     setNroGuia("");
@@ -157,7 +153,8 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
         celular: celular || null,
         fechaTrabajo: fechaTrabajo || null,
         local: local || null,
-        encargado: encargado || null,
+        encargado: encargadoName || null,
+        encargadoId: encargadoId || null,
         condicionesPago: condicionesPago || null,
         nroFactura: nroFactura || null,
         nroGuia: nroGuia || null,
@@ -373,18 +370,14 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
               <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
                 Encargado
               </label>
-              <Select value={encargado} onValueChange={(v) => v && setEncargado(v)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccione encargado..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {ENCARGADOS.map((e) => (
-                    <SelectItem key={e} value={e}>
-                      {e}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EncargadoSelector
+                value={encargadoId}
+                clientId={selectedClient?.id ?? null}
+                onChange={(id, enc) => {
+                  setEncargadoId(id);
+                  setEncargadoName(enc?.name || "");
+                }}
+              />
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
