@@ -77,25 +77,11 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
   const [observaciones, setObservaciones] = useState("");
   const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<number | "">("");
 
-  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
-
   useEffect(() => {
     if (selectedClient) {
       setRazonSocial(selectedClient.name);
     }
   }, [selectedClient]);
-
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const uRes = await fetch("/api/users").then((r) => (r.ok ? r.json() : []));
-        setUsers((uRes || []).map((u: any) => ({ id: u.id, name: u.name })));
-      } catch (err) {
-        console.error("[WorkOrderForm] load users error:", err);
-      }
-    }
-    loadUsers();
-  }, []);
 
   function handleClientSelect(client: ClientInfo) {
     setSelectedClient(client);
@@ -259,18 +245,13 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
                 <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
                   Entregado Por
                 </label>
-                <Select value={entregadoPor} onValueChange={(v) => v && setEntregadoPor(v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccione usuario..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.name}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <input
+                  type="text"
+                  value={entregadoPor}
+                  onChange={(e) => setEntregadoPor(e.target.value)}
+                  placeholder="Nombre de quien entrega"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
