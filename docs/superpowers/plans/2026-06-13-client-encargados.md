@@ -75,14 +75,16 @@ In the `Client` model (around line 82-108), inside the model body, add this line
   encargados Encargado[]
 ```
 
-- [ ] **Step 3: Add `encargadoId` + relation to `WorkOrder` model**
+- [ ] **Step 3: Add `encargadoId` + `encargadoRef` relation to `WorkOrder` model**
 
 In the `WorkOrder` model (around line 192-243), add after the `invoices Invoice[]` line (still inside the model body):
 
 ```prisma
-  encargadoId String?    @map("encargado_id")
-  encargado   Encargado? @relation(fields: [encargadoId], references: [id], onDelete: SetNull)
+  encargadoId  String?    @map("encargado_id")
+  encargadoRef Encargado? @relation(fields: [encargadoId], references: [id], onDelete: SetNull)
 ```
+
+**IMPORTANT:** The relation is named `encargadoRef` (not `encargado`) because `WorkOrder` already has a legacy `encargado String?` free-text field. Prisma forbids two fields with the same name in the same model. The legacy field is left untouched.
 
 - [ ] **Step 4: Add `encargadosCreated` relation to `User` model**
 
@@ -1316,7 +1318,7 @@ So the block around line 28 becomes:
   encargadoId: z.string().optional().nullable(),
 ```
 
-- [ ] **Step 3: Add `encargado` to the include in the service**
+- [ ] **Step 3: Add `encargadoRef` to the include in the service**
 
 In `src/modules/work-orders/services/workOrderService.ts`, update the `includeRelations` constant (lines 4-7) to:
 
@@ -1324,7 +1326,7 @@ In `src/modules/work-orders/services/workOrderService.ts`, update the `includeRe
 const includeRelations = {
   client: { select: { id: true, name: true } },
   materials: { orderBy: { createdAt: "asc" as const } },
-  encargado: {
+  encargadoRef: {
     select: {
       id: true,
       name: true,
@@ -1334,6 +1336,8 @@ const includeRelations = {
   },
 };
 ```
+
+Note: we use the Prisma field name `encargadoRef` here (matching the schema). The TypeScript type in `workOrder.ts` keeps the optional `encargadoRel` alias name to avoid colliding with the legacy `encargado: string | null` text field on the type.
 
 - [ ] **Step 4: Verify TypeScript compiles**
 

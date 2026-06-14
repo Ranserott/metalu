@@ -56,7 +56,7 @@ model Encargado {
 
 **Modifications to existing models**:
 - `Client`: add `encargados Encargado[]`
-- `WorkOrder`: add `encargadoId String? @map("encargado_id")` + `encargado Encargado? @relation(fields: [encargadoId], references: [id], onDelete: SetNull)`
+- `WorkOrder`: add `encargadoId String? @map("encargado_id")` + `encargadoRef Encargado? @relation(fields: [encargadoId], references: [id], onDelete: SetNull)`. **The relation is named `encargadoRef` (NOT `encargado`)** because `WorkOrder` already has a legacy free-text `encargado String?` field used as a static dropdown. The legacy field stays untouched at MVP — it prefills with the selected encargado's name on selection, and existing reports / printouts keep reading it. The new selector is the canonical link.
 - `User`: add `encargadosCreated Encargado[] @relation("EncargadoCreator")`
 
 **Migration**: `prisma migrate dev --name add_encargados_module`
