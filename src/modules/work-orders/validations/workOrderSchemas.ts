@@ -26,6 +26,7 @@ export const WorkOrderSchema = z.object({
   fechaTrabajo: z.union([z.string(), z.date()]).optional().nullable(),
   local: z.string().optional().nullable(),
   encargado: z.string().optional().nullable(),
+  encargadoId: z.string().optional().nullable(),
   condicionesPago: z.string().optional().nullable(),
 
   nroFactura: z.string().optional().nullable(),

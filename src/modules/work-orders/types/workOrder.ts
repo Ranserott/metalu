@@ -29,6 +29,8 @@ export type WorkOrder = {
   fechaTrabajo: Date | null;
   local: string | null;
   encargado: string | null;
+  encargadoId: string | null;
+  encargadoRel?: { id: string; name: string; rut: string; client: { id: string; name: string } } | null;
   condicionesPago: string | null;
 
   nroFactura: string | null;

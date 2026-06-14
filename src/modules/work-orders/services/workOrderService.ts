@@ -4,6 +4,14 @@ import { WorkOrderInput, WorkOrderItemInput } from "../validations/workOrderSche
 const includeRelations = {
   client: { select: { id: true, name: true } },
   materials: { orderBy: { createdAt: "asc" as const } },
+  encargadoRef: {
+    select: {
+      id: true,
+      name: true,
+      rut: true,
+      client: { select: { id: true, name: true } },
+    },
+  },
 };
 
 function normalizeDates(data: any) {
