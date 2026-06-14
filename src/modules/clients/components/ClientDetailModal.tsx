@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Client, QuotationSummary, InvoiceSummary } from "../types/client";
+import { EncargadoListSection } from "@/modules/encargados/components/EncargadoListSection";
 import {
   User,
   MapPin,
@@ -131,6 +132,12 @@ export function ClientDetailModal({ open, onOpenChange, clientId }: Props) {
             )}
 
             <Separator />
+
+            <EncargadoListSection
+              clientId={client.id}
+              clientCode={client.code}
+              clientName={client.name}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <RecentSection
