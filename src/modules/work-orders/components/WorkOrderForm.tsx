@@ -31,6 +31,11 @@ const ENCARGADOS = [
   "SUPERVISOR",
 ];
 
+const LOCALES = [
+  "CASA MATRIZ",
+  "SUCURSAL 1",
+];
+
 const CONDICIONES_PAGO = [
   "30 DÍAS CRÉDITO",
   "CONTADO",
@@ -55,7 +60,7 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
 
   const [nroCotizacion, setNroCotizacion] = useState("");
   const [fechaTrabajo, setFechaTrabajo] = useState("");
-  const [local, setLocal] = useState("");
+  const [local, setLocal] = useState("CASA MATRIZ");
   const [encargado, setEncargado] = useState("");
   const [condicionesPago, setCondicionesPago] = useState("30 DÍAS CRÉDITO");
 
@@ -120,7 +125,7 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
     setNroCotizacion("");
     setSelectedQuotationLabel("");
     setFechaTrabajo("");
-    setLocal("");
+    setLocal("CASA MATRIZ");
     setEncargado("");
     setCondicionesPago("30 DÍAS CRÉDITO");
     setNroFactura("");
@@ -369,13 +374,18 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
                 <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
                   Local
                 </label>
-                <input
-                  type="text"
-                  value={local}
-                  onChange={(e) => setLocal(e.target.value)}
-                  placeholder="BODEGA MATRIZ"
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                />
+                <Select value={local} onValueChange={(v) => v && setLocal(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCALES.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
