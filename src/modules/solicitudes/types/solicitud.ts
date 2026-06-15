@@ -1,3 +1,9 @@
+// NOTE: numeric fields (subtotal, tax, total, discount, quantity,
+// unitPrice) are declared as `number` for DTO convenience, but the
+// Prisma schema stores them as `Decimal`. The service layer is
+// responsible for coercing `Prisma.Decimal` instances to `number`
+// (via `.toNumber()`) before returning to consumers.
+
 export type SolicitudStatus =
   | "SOLICITUD_GENERADA"
   | "EN_REVISION"
