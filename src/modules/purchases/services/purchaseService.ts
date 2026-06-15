@@ -1,73 +1,62 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma/prisma";
 import { PurchaseInput } from "../validations/purchaseSchemas";
 
-const mockPurchases = [
-  {
-    id: "1",
-    number: "OC-2024-001",
-    supplierId: "1",
-    status: "SENT",
-    subtotal: "5000.00",
-    tax: "800.00",
-    total: "5800.00",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+const INCLUDE_BASE = {
+  supplier: { select: { id: true, name: true } },
+};
+
+async function nextPurchaseNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `OC-${year}-`;
+  const last = await prisma.purchase.findFirst({
+    where: { number: { startsWith: prefix } },
+    orderBy: { number: "desc" },
+  });
+  const lastSeq = last ? parseInt(last.number.slice(prefix.length), 10) : 0;
+  return `${prefix}${String(lastSeq + 1).padStart(3, "0")}`;
+}
 
 export async function getPurchases() {
-  try {
-    return await prisma.purchase.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { supplier: { select: { name: true } } },
-    });
-  } catch {
-    return mockPurchases;
-  }
+  return prisma.purchase.findMany({
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    include: INCLUDE_BASE,
+  });
 }
 
 export async function getPurchaseById(id: string) {
-  try {
-    return await prisma.purchase.findUnique({
-      where: { id, deletedAt: null },
-    });
-  } catch {
-    return mockPurchases.find((p) => p.id === id) || null;
-  }
+  return prisma.purchase.findFirst({
+    where: { id, deletedAt: null },
+    include: INCLUDE_BASE,
+  });
 }
 
 export async function createPurchase(data: PurchaseInput, userId: string) {
-  try {
-    return await prisma.purchase.create({
-      data: {
-        ...data,
-        createdById: userId,
-      } as any,
-    });
-  } catch {
-    return { ...data, id: Date.now().toString(), createdAt: new Date(), updatedAt: new Date() };
-  }
+  const number = data.number || (await nextPurchaseNumber());
+  return prisma.purchase.create({
+    data: {
+      number,
+      supplierId: data.supplierId,
+      status: (data.status || "DRAFT") as Prisma.PurchaseCreateInput["status"],
+      subtotal: data.subtotal as Prisma.PurchaseCreateInput["subtotal"],
+      tax: data.tax as Prisma.PurchaseCreateInput["tax"],
+      total: data.total as Prisma.PurchaseCreateInput["total"],
+      createdById: userId,
+    },
+  });
 }
 
 export async function updatePurchase(id: string, data: Partial<PurchaseInput>) {
-  try {
-    return await prisma.purchase.update({
-      where: { id },
-      data,
-    });
-  } catch {
-    return { ...mockPurchases[0], ...data, id, updatedAt: new Date() };
-  }
+  return prisma.purchase.update({
+    where: { id },
+    data: data as Prisma.PurchaseUncheckedUpdateInput as any,
+  });
 }
 
 export async function deletePurchase(id: string) {
-  try {
-    return await prisma.purchase.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-  } catch {
-    return { id };
-  }
+  return prisma.purchase.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 }
