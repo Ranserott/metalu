@@ -382,7 +382,7 @@ import {
   SolicitudInput,
   SolicitudReviewInput,
   SolicitudStatus,
-} from "../validations/solicitudSchemas";
+} from "../types/solicitud";
 
 const TAX_RATE = 0.19; // IVA Chile
 
@@ -747,7 +747,7 @@ Write to `src/app/api/solicitudes/route.ts`:
 
 ```ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import {
   getSolicitudes,
   createSolicitud,
@@ -756,7 +756,7 @@ import { SolicitudSchema } from "@/modules/solicitudes/validations/solicitudSche
 import { SolicitudStatus } from "@/modules/solicitudes/types/solicitud";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -777,7 +777,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -839,7 +839,7 @@ Write to `src/app/api/solicitudes/[id]/route.ts`:
 
 ```ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import {
   getSolicitudById,
   updateSolicitud,
@@ -856,7 +856,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -876,7 +876,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -947,7 +947,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -1022,7 +1022,7 @@ Write to `src/app/api/solicitudes/[id]/transitions/route.ts`:
 
 ```ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import { transitionSolicitud } from "@/modules/solicitudes/services/solicitudService";
 import { SolicitudTransitionSchema } from "@/modules/solicitudes/validations/solicitudSchemas";
 import { isAdmin } from "@/lib/auth/permissions";
@@ -1031,7 +1031,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -2638,7 +2638,7 @@ Write to `src/app/(dashboard)/purchases/solicitudes/[id]/page.tsx`:
 
 ```tsx
 import { notFound } from "next/navigation";
-import { getServerSession } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import { getSolicitudById } from "@/modules/solicitudes/services/solicitudService";
 import { SolicitudDetailView } from "@/modules/solicitudes/components/SolicitudDetailView";
 import { isAdmin } from "@/lib/auth/permissions";
@@ -2648,7 +2648,7 @@ export default async function SolicitudDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.id) {
     return <div className="p-6">No autorizado. Iniciá sesión.</div>;
   }
