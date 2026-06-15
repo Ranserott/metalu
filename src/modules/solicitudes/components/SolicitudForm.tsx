@@ -10,6 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Info,
   Calendar,
   Save,
@@ -52,6 +59,7 @@ export function SolicitudForm({ initialWorkOrderId }: { initialWorkOrderId?: str
   const [workOrders, setWorkOrders] = useState<WorkOrderOpt[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [workOrderSearchOpen, setWorkOrderSearchOpen] = useState(false);
+  const [woModalSearch, setWoModalSearch] = useState("");
 
   useEffect(() => {
     setDiasSinOC(daysBetween(fechaTrabajo, todayISO()));
@@ -67,6 +75,13 @@ export function SolicitudForm({ initialWorkOrderId }: { initialWorkOrderId?: str
       .then((d) => setWorkOrders(Array.isArray(d) ? d : []))
       .catch(() => {});
   }, []);
+
+  // Sync the modal search with the outside input whenever the modal opens
+  useEffect(() => {
+    if (workOrderSearchOpen) {
+      setWoModalSearch(trabajoNumero);
+    }
+  }, [workOrderSearchOpen, trabajoNumero]);
 
   function handleLimpia() {
     setTrabajoNumero("");
@@ -143,8 +158,8 @@ export function SolicitudForm({ initialWorkOrderId }: { initialWorkOrderId?: str
   });
 
   const filteredWOs = workOrders.filter((w) => {
-    if (!trabajoNumero) return true;
-    const q = trabajoNumero.toLowerCase();
+    if (!woModalSearch) return true;
+    const q = woModalSearch.toLowerCase();
     return (
       w.number.toLowerCase().includes(q) || w.title.toLowerCase().includes(q)
     );
@@ -198,32 +213,56 @@ export function SolicitudForm({ initialWorkOrderId }: { initialWorkOrderId?: str
                   </Button>
                 </div>
                 {workOrderSearchOpen && (
-                  <div className="border rounded-md p-2 max-h-48 overflow-y-auto bg-background">
-                    {filteredWOs.length === 0 && (
-                      <div className="text-sm text-muted-foreground p-2">Sin resultados</div>
-                    )}
-                    {filteredWOs.map((w) => (
-                      <button
-                        key={w.id}
-                        type="button"
-                        onClick={() => {
-                          setWorkOrderId(w.id);
-                          setTrabajoNumero(w.number);
-                          const woClient = clients.find((c) => c.id === w.clientId);
-                          if (woClient) {
-                            setClientId(woClient.id);
-                            setClienteNombre(woClient.name);
-                            setRut(woClient.code);
-                          }
-                          setWorkOrderSearchOpen(false);
-                        }}
-                        className="w-full text-left text-sm p-2 hover:bg-muted rounded"
-                      >
-                        <div className="font-mono font-semibold">{w.number}</div>
-                        <div className="text-xs text-muted-foreground">{w.title}</div>
-                      </button>
-                    ))}
-                  </div>
+                  <Dialog open={workOrderSearchOpen} onOpenChange={setWorkOrderSearchOpen}>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Buscar trabajo</DialogTitle>
+                        <DialogDescription>
+                          Escribí el número o título del trabajo
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={woModalSearch}
+                            onChange={(e) => setWoModalSearch(e.target.value)}
+                            placeholder="Número o título del trabajo"
+                            className="pl-9"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="max-h-96 overflow-y-auto space-y-1">
+                          {filteredWOs.length === 0 && (
+                            <div className="text-sm text-muted-foreground p-4 text-center">
+                              Sin resultados
+                            </div>
+                          )}
+                          {filteredWOs.map((w) => (
+                            <button
+                              key={w.id}
+                              type="button"
+                              onClick={() => {
+                                setWorkOrderId(w.id);
+                                setTrabajoNumero(w.number);
+                                const woClient = clients.find((c) => c.id === w.clientId);
+                                if (woClient) {
+                                  setClientId(woClient.id);
+                                  setClienteNombre(woClient.name);
+                                  setRut(woClient.code);
+                                }
+                                setWorkOrderSearchOpen(false);
+                              }}
+                              className="w-full text-left p-3 hover:bg-muted rounded border"
+                            >
+                              <div className="font-mono font-semibold">{w.number}</div>
+                              <div className="text-xs text-muted-foreground">{w.title}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </div>
 
