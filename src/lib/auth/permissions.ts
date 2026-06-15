@@ -67,3 +67,11 @@ export function canAccess(role: string, resource: string, action: string): boole
   const specific = permissions.find((p) => p.resource === resource);
   return specific?.actions.includes(action as any) ?? false;
 }
+
+/**
+ * Checks if the given roles array includes "Admin".
+ * Pass `session.user.roles` (string[]) from the NextAuth session.
+ */
+export function isAdmin(roles: string[] | undefined | null): boolean {
+  return Array.isArray(roles) && roles.includes("Admin");
+}
