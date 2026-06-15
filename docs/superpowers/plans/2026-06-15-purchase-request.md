@@ -2693,10 +2693,19 @@ actions (submit, approve, reject, cancel)."
 
 ---
 
-## Task 16: Modify WorkOrderDetailModal to Add "Purchase Requests" Section
+## Task 16: SKIPPED — WorkOrderDetailModal does not exist
+
+**Status:** SKIPPED during execution. The referenced file `src/modules/work-orders/components/WorkOrderDetailModal.tsx` does not exist in the codebase — the work-orders module has no detail view (only WorkOrderForm.tsx and WorkOrderTable.tsx). The plan/spec assumed it did, but the underlying component was never built.
+
+**Impact:** The Solicitudes OC integration into the work-orders view is missing. The /purchases page (with Tabs + "Nueva orden de compra" button) and the SolicitudForm's work-order search picker still allow creating solicitudes linked to work orders — just without a dedicated section in the work-order detail view.
+
+**Possible follow-ups (out of scope for this plan):**
+1. Build a minimal `WorkOrderDetailModal` (server component) that fetches the work order + related quotations/payments/solicitudes, then re-do this task.
+2. Refactor `WorkOrderTable` to receive linked solicitudes via a server-component prop and show them in an expanded row.
+3. Add a dedicated "Solicitudes OC" tab/section to the work-orders page.
 
 **Files:**
-- Modify: `src/modules/work-orders/components/WorkOrderDetailModal.tsx`
+- (none — task skipped)
 
 - [ ] **Step 1: Read the current file**
 
