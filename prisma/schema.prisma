@@ -169,8 +169,8 @@ model SolicitudOrdenCompra {
   client    Client                 @relation(fields: [clientId], references: [id], onDelete: Restrict)
   supplier  Supplier?              @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   purchase  Purchase?              @relation("SolicitudPurchase", fields: [purchaseId], references: [id], onDelete: SetNull)
-  createdBy User?                  @relation("SolicitudCreator", fields: [createdById], references: [id])
-  rejectedBy User?                 @relation("SolicitudRejecter", fields: [rejectedById], references: [id])
+  createdBy User?   @relation("SolicitudCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  rejectedBy User?  @relation("SolicitudRejecter", fields: [rejectedById], references: [id], onDelete: SetNull)
   items     SolicitudItem[]
 
   @@map("solicitudes_orden_compra")
