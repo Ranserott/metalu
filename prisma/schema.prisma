@@ -38,6 +38,8 @@ model User {
   createdPayments   Payment[]        @relation("PaymentCreator")
   createdEncargados Encargado[]      @relation("EncargadoCreator")
   uploadedFiles     FileAttachment[] @relation("FileUploader")
+  createdSolicitudes  SolicitudOrdenCompra[] @relation("SolicitudCreator")
+  rejectedSolicitudes SolicitudOrdenCompra[] @relation("SolicitudRejecter")
 
   @@map("users")
 }
@@ -105,6 +107,7 @@ model Client {
   workOrders WorkOrder[]
   invoices   Invoice[]
   encargados Encargado[]
+  solicitudesOC SolicitudOrdenCompra[]
 
   @@map("clients")
 }
@@ -128,6 +131,79 @@ model Encargado {
   workOrders WorkOrder[]
 
   @@map("encargados")
+}
+
+model SolicitudOrdenCompra {
+  id              String                  @id @default(uuid())
+  number          String                  @unique
+  workOrderId     String                  @map("work_order_id")
+  clientId        String                  @map("client_id")
+  fechaTrabajo    DateTime                @map("fecha_trabajo")
+  fechaEntrega    DateTime                @map("fecha_entrega")
+  diasSinOC       Int                     @default(0) @map("dias_sin_oc")
+  solicitud1      DateTime?               @map("solicitud_1")
+  solicitud2      DateTime?               @map("solicitud_2")
+  solicitud3      DateTime?               @map("solicitud_3")
+  notasInternas   String?                 @map("notas_internas")
+  status          SolicitudStatus         @default(SOLICITUD_GENERADA)
+  purchaseId      String?                 @unique @map("purchase_id")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  deletedAt       DateTime?               @map("deleted_at")
+  createdById     String?                 @map("created_by_id")
+
+  // Review fields (paso 2 — admin)
+  supplierId       String?                 @map("supplier_id")
+  subtotal         Decimal?                @db.Decimal(12, 2)
+  tax              Decimal?                @db.Decimal(12, 2)
+  total            Decimal?                @db.Decimal(12, 2)
+  discount         Decimal?                @default(0) @db.Decimal(12, 2)
+  discountType     SolicitudDiscountType?  @default(NONE) @map("discount_type")
+
+  // Rejection fields
+  rejectionReason String?   @map("rejection_reason")
+  rejectedById    String?   @map("rejected_by_id")
+  rejectedAt      DateTime? @map("rejected_at")
+
+  workOrder WorkOrder              @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  client    Client                 @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  supplier  Supplier?              @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchase  Purchase?              @relation("SolicitudPurchase", fields: [purchaseId], references: [id], onDelete: SetNull)
+  createdBy User?                  @relation("SolicitudCreator", fields: [createdById], references: [id])
+  rejectedBy User?                 @relation("SolicitudRejecter", fields: [rejectedById], references: [id])
+  items     SolicitudItem[]
+
+  @@map("solicitudes_orden_compra")
+}
+
+model SolicitudItem {
+  id          String    @id @default(uuid())
+  solicitudId String    @map("solicitud_id")
+  description String
+  quantity    Decimal   @db.Decimal(10, 2)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  solicitud SolicitudOrdenCompra @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  @@map("solicitud_items")
+}
+
+enum SolicitudStatus {
+  SOLICITUD_GENERADA
+  EN_REVISION
+  ORDEN_EMITIDA
+  RECHAZADA
+  CANCELADA
+}
+
+enum SolicitudDiscountType {
+  NONE
+  AMOUNT
+  PERCENT
 }
 
 model Quotation {
@@ -208,6 +284,7 @@ model Supplier {
   createdBy User?      @relation("SupplierCreator", fields: [createdById], references: [id])
   purchases Purchase[]
   payments  Payment[]
+  solicitudes SolicitudOrdenCompra[]
 
   @@map("suppliers")
 }
@@ -263,6 +340,7 @@ model WorkOrder {
   invoices     Invoice[]
   encargadoId  String?             @map("encargado_id")
   encargadoRef Encargado?          @relation(fields: [encargadoId], references: [id], onDelete: SetNull)
+  solicitudesOC  SolicitudOrdenCompra[]
 
   @@map("work_orders")
 }
@@ -337,6 +415,7 @@ model Purchase {
   createdBy User?          @relation("PurchaseCreator", fields: [createdById], references: [id])
   supplier  Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   items     PurchaseItem[]
+  solicitud SolicitudOrdenCompra? @relation("SolicitudPurchase")
 
   @@map("purchases")
 }
