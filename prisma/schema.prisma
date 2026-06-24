@@ -463,6 +463,10 @@ model Invoice {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   deletedAt      DateTime?     @map("deleted_at")
   createdById    String?       @map("created_by_id")
+  tipoDocumento  String?       @default("Factura Electrónica") @map("tipo_documento")
+  abonos         Decimal?      @default(0) @db.Decimal(12, 2)
+  saldo          Decimal?      @db.Decimal(12, 2)
+  guiasAsociadas String?       @map("guias_asociadas")
 
   createdBy User?         @relation("InvoiceCreator", fields: [createdById], references: [id])
   client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
