@@ -50,7 +50,10 @@ export async function getInvoiceById(id: string) {
   try {
     return await prisma.invoice.findUnique({
       where: { id, deletedAt: null },
-      include: { items: true },
+      include: {
+        items: true,
+        client: { select: { id: true, code: true, name: true } },
+      },
     });
   } catch {
     return mockInvoices.find((i) => i.id === id) || null;
