@@ -82,7 +82,11 @@ function emptyGuias(): GuiaRow[] {
   }));
 }
 
-export function InvoiceForm() {
+export function InvoiceForm({
+  initialWorkOrderId: _initialWorkOrderId,
+}: {
+  initialWorkOrderId?: string;
+} = {}) {
   const router = useRouter();
 
   // ---- Header / doc data ----
