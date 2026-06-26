@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Printer } from "lucide-react";
+import { Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { QuotationPrintModal } from "./QuotationPrintModal";
 import { Quotation } from "../types/quotation";
 
 type Props = {
@@ -36,7 +35,8 @@ const statusColors: Record<string, string> = {
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
 export function QuotationView({ quotation }: Props) {
-  const [printOpen, setPrintOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
 
   const materials = (quotation.items || []).filter((i) => i.type === "MATERIAL");
   const works = (quotation.items || []).filter((i) => i.type === "WORK");
@@ -56,11 +56,30 @@ export function QuotationView({ quotation }: Props) {
       ? `Descuento (${percentValue}%):`
       : "Descuento:";
 
-  const printClient = {
-    id: quotation.client.id,
-    name: quotation.client.name,
-    code: (quotation as { client?: { code?: string } }).client?.code ?? "",
-  };
+  async function handlePrint() {
+    setPrintError(null);
+    setPrinting(true);
+    try {
+      const res = await fetch(`/api/quotations/${quotation.id}/pdf`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Error al generar el PDF");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Cotizacion-${quotation.number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setPrintError(err?.message ?? "Error desconocido");
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -70,13 +89,25 @@ export function QuotationView({ quotation }: Props) {
           <p className="text-sm text-muted-foreground">{quotation.client?.name || "—"}</p>
         </div>
         <Button
-          onClick={() => setPrintOpen(true)}
+          onClick={handlePrint}
+          disabled={printing}
           className="bg-[#14679C] hover:bg-[#14679C]/90"
         >
-          <Printer className="h-4 w-4 mr-2" />
-          Imprimir PDF
+          {printing ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Printer className="h-4 w-4 mr-2" />
+          )}
+          {printing ? "Generando PDF..." : "Imprimir PDF"}
         </Button>
       </div>
+
+      {printError && (
+        <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {printError}
+        </div>
+      )}
+
       {/* Header info */}
       <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
         <div>
@@ -212,12 +243,6 @@ export function QuotationView({ quotation }: Props) {
           <span className="text-[var(--theme-dark)]">{clp.format(total)}</span>
         </div>
       </div>
-
-      <QuotationPrintModal
-        open={printOpen}
-        onOpenChange={setPrintOpen}
-        quotation={{ ...quotation, client: printClient }}
-      />
     </div>
   );
 }

@@ -1,23 +1,9 @@
 import React from "react";
-import { Document, Page, View, Text, Image, Font, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
+import { registerPdfFonts, PDF_FONT_FAMILY } from "@/lib/pdf/fonts";
 
-// Register EB Garamond from Google Fonts woff2 files.
-// @react-pdf/renderer's Font.register does NOT support CSS font-face —
-// we must point src directly at .woff2 (or .ttf/.otf) URLs.
-// NOTE: client.code is used as RUT surrogate (Client table has no RUT column).
-Font.register({
-  family: "EBGaramond",
-  fonts: [
-    { src: "https://fonts.gstatic.com/s/ebgaramond/v30/SlGDmQSNjdsmc35JDF1K5FRyRA.woff2" },
-    {
-      src: "https://fonts.gstatic.com/s/ebgaramond/v30/Slwj82RlBBcJhD63XOc7KnV-saU.woff2",
-      fontWeight: 700,
-    },
-  ],
-});
-
-const FONT = "EBGaramond";
+registerPdfFonts();
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -44,7 +30,6 @@ function toNum(v: number | string | { toNumber: () => number } | null | undefine
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : 0;
   }
-  // Prisma Decimal-like
   if (typeof (v as any).toNumber === "function") {
     try {
       return (v as any).toNumber();
@@ -65,21 +50,17 @@ type Item = {
   type: "MATERIAL" | "WORK";
 };
 
-export type PrintFields = {
-  descripcionTrabajo: string;
-  plazoEntrega: string;
-  atencion: string;
-  area: string;
-  cotizoNombre: string;
-};
-
 // Use a structural type that matches the Prisma return shape so callers don't
-// need to coerce Decimal -> number. We accept `any` for monetary fields and
-// coerce internally via toNum() (which handles number | string | Decimal).
+// need to coerce Decimal -> number. We accept any for monetary fields and
+// coerce internally via toNum().
 type Props = {
   quotation: {
     id: string;
     number: string;
+    descripcionTrabajo?: string | null;
+    plazoEntrega?: string | null;
+    atencion?: string | null;
+    area?: string | null;
     client: {
       id: string;
       name: string;
@@ -87,6 +68,7 @@ type Props = {
       address?: string | null;
       city?: string | null;
     };
+    createdBy?: { id: string; name: string | null } | null;
     items: Item[];
     subtotal: number | string | { toNumber: () => number };
     tax: number | string | { toNumber: () => number };
@@ -97,7 +79,6 @@ type Props = {
     validUntil: Date | string;
     [k: string]: any;
   };
-  printFields: PrintFields;
 };
 
 const styles = StyleSheet.create({
@@ -105,11 +86,10 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 80,
     paddingHorizontal: 40,
-    fontFamily: FONT,
+    fontFamily: PDF_FONT_FAMILY,
     fontSize: 10,
     color: "#111",
   },
-  // Header
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -118,7 +98,6 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 110,
-    height: undefined as unknown as number,
   },
   headerRight: {
     flexDirection: "column",
@@ -129,7 +108,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 700,
     marginBottom: 6,
-    fontFamily: FONT,
+    fontFamily: PDF_FONT_FAMILY,
   },
   companyName: {
     fontWeight: 700,
@@ -142,7 +121,6 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     fontSize: 10,
   },
-  // Client + fecha
   clientRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -163,7 +141,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginBottom: 10,
   },
-  // Section header bar
   sectionBar: {
     backgroundColor: "#e6e6e6",
     paddingVertical: 4,
@@ -175,17 +152,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 700,
   },
-  // Table
   table: {
     borderTop: 1,
     borderLeft: 1,
     borderRight: 1,
-    borderColor: "#111",
-  },
-  tHead: {
-    flexDirection: "row",
-    backgroundColor: "#f3f3f3",
-    borderBottom: 1,
     borderColor: "#111",
   },
   tRow: {
@@ -211,7 +181,6 @@ const styles = StyleSheet.create({
   cTotal: { width: "17%" },
   cLabel: { width: "50%" },
   cValue: { width: "50%" },
-  // Summary table styles (Sec IV)
   totalRow: {
     flexDirection: "row",
     borderTop: 1,
@@ -220,7 +189,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     justifyContent: "flex-end",
   },
-  // Resumen general — right-side summary block
   resumenRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,7 +216,6 @@ const styles = StyleSheet.create({
     borderColor: "#111",
     marginTop: 2,
   },
-  // Footer (fixed)
   footerFixed: {
     position: "absolute",
     left: 40,
@@ -301,9 +268,8 @@ function ItemsTable({
     <View>
       <SectionHeader title="Item | Descripcion | Unidad | P.Unitario | Total" />
       <View style={styles.table}>
-        {/* Header row duplicates the bar above for clarity; section bar already shows column names */}
         <View style={styles.tRow}>
-          <Text style={[styles.tCell, styles.cItem]}>{items.length > 0 ? "" : ""}</Text>
+          <Text style={[styles.tCell, styles.cItem]}></Text>
           <Text style={[styles.tCell, styles.cDesc]}></Text>
           <Text style={[styles.tCell, styles.cUnit]}></Text>
           <Text style={[styles.tCell, styles.cPrice]}></Text>
@@ -334,7 +300,7 @@ function ItemsTable({
   );
 }
 
-export function QuotationPdf({ quotation, printFields }: Props) {
+export function QuotationPdf({ quotation }: Props) {
   const items = quotation.items ?? [];
   const materials = items.filter((i) => i.type === "MATERIAL");
   const works = items.filter((i) => i.type === "WORK");
@@ -348,7 +314,6 @@ export function QuotationPdf({ quotation, printFields }: Props) {
   const discount = toNum(quotation.discount ?? 0);
   const discountType = quotation.discountType ?? "NONE";
 
-  // Compute discount amount for display
   let discountAmount = 0;
   let discountPercent = 0;
   if (discountType === "PERCENT") {
@@ -359,6 +324,8 @@ export function QuotationPdf({ quotation, printFields }: Props) {
     discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
   }
   const neto = Math.max(subtotal - discountAmount, 0);
+
+  const cotizo = quotation.createdBy?.name?.trim() || "—";
 
   return (
     <Document
@@ -388,8 +355,8 @@ export function QuotationPdf({ quotation, printFields }: Props) {
             <Text style={styles.clientLine}>Rut: {quotation.client?.code ?? "—"}</Text>
             <Text style={styles.clientLine}>Direccion: {quotation.client?.address ?? "—"}</Text>
             <Text style={styles.clientLine}>Ciudad: {quotation.client?.city ?? ""}</Text>
-            <Text style={styles.clientLine}>Atencion: {printFields.atencion || "—"}</Text>
-            <Text style={styles.clientLine}>Area: {printFields.area || "—"}</Text>
+            <Text style={styles.clientLine}>Atencion: {quotation.atencion || "—"}</Text>
+            <Text style={styles.clientLine}>Area: {quotation.area || "—"}</Text>
           </View>
           <View>
             <Text style={styles.fecha}>Fecha: {formatDate(quotation.createdAt)}</Text>
@@ -398,7 +365,7 @@ export function QuotationPdf({ quotation, printFields }: Props) {
 
         {/* DESCRIPCION TRABAJO */}
         <Text style={styles.descripcionLine}>
-          Descripcion Trabajo: {printFields.descripcionTrabajo || "—"}
+          Descripcion Trabajo: {quotation.descripcionTrabajo || "—"}
         </Text>
 
         {/* SECTION I — MATERIALES */}
@@ -478,9 +445,9 @@ export function QuotationPdf({ quotation, printFields }: Props) {
         {/* FOOTER (fixed at bottom) */}
         <View style={styles.footerFixed} fixed>
           <View style={styles.footerLeft}>
-            <Text>Plazo de Entrega: {printFields.plazoEntrega || "—"}</Text>
+            <Text>Plazo de Entrega: {quotation.plazoEntrega || "—"}</Text>
             <Text>Validez Oferta: {formatDate(quotation.validUntil)}</Text>
-            <Text>Cotizo: {printFields.cotizoNombre || "—"}</Text>
+            <Text>Cotizo: {cotizo}</Text>
           </View>
           <View style={styles.footerRight}>
             <View style={styles.firmaLine} />

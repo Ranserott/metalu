@@ -96,6 +96,10 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
         status: (defaultValues?.status as any) || "DRAFT",
         validUntil: defaultValues?.validUntil || "",
         notes: defaultValues?.notes || "",
+        descripcionTrabajo: defaultValues?.descripcionTrabajo || "",
+        plazoEntrega: defaultValues?.plazoEntrega || "",
+        atencion: defaultValues?.atencion || "",
+        area: defaultValues?.area || "",
         discount: defaultValues?.discount || "0",
         discountType: defaultValues?.discountType || "NONE",
         items: normalizeItems(defaultValues?.items),
@@ -113,6 +117,10 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
         status: (defaultValues.status as any) || "DRAFT",
         validUntil: defaultValues.validUntil || "",
         notes: defaultValues.notes || "",
+        descripcionTrabajo: defaultValues.descripcionTrabajo || "",
+        plazoEntrega: defaultValues.plazoEntrega || "",
+        atencion: defaultValues.atencion || "",
+        area: defaultValues.area || "",
         discount: defaultValues.discount || "0",
         discountType: defaultValues.discountType || "NONE",
         items,
@@ -317,6 +325,54 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
               rows={2}
               className="mt-1 border-gray-200 resize-none"
               placeholder="Notas o descripción de la cotización..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Datos para Cotización (se imprimen en el PDF) */}
+      <div className="border rounded-lg overflow-hidden shadow-sm">
+        <SectionHeader icon={FileText} title="Datos para Cotización" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white">
+          <div className="md:col-span-2">
+            <Label className="text-xs text-gray-500 uppercase tracking-wide">
+              Descripción del Trabajo
+            </Label>
+            <Textarea
+              {...register("descripcionTrabajo")}
+              rows={2}
+              className="mt-1 border-gray-200 resize-none"
+              placeholder="Ej: MESON SALIDA DETECTOR METALES"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500 uppercase tracking-wide">
+              Plazo de Entrega
+            </Label>
+            <Input
+              {...register("plazoEntrega")}
+              className="mt-1 h-10 border-gray-200"
+              placeholder="Ej: 15 Dias"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500 uppercase tracking-wide">
+              Atención
+            </Label>
+            <Input
+              {...register("atencion")}
+              className="mt-1 h-10 border-gray-200"
+              placeholder="Persona de contacto en el cliente"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500 uppercase tracking-wide">
+              Área
+            </Label>
+            <Input
+              {...register("area")}
+              className="mt-1 h-10 border-gray-200"
+              placeholder="Departamento o área del cliente"
             />
           </div>
         </div>
