@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkOrderTable } from "@/modules/work-orders/components/WorkOrderTable";
 import { WorkOrderForm } from "@/modules/work-orders/components/WorkOrderForm";
+import { WorkOrderDetailView } from "@/modules/work-orders/components/WorkOrderDetailView";
 import { WorkOrder } from "@/modules/work-orders/types/workOrder";
 import { WorkOrderItemInput } from "@/modules/work-orders/validations/workOrderSchemas";
 
@@ -13,6 +14,8 @@ export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewData, setViewData] = useState<WorkOrder | null>(null);
   const [nextNumber, setNextNumber] = useState<string>("");
 
   const fetchWorkOrders = async () => {
@@ -48,6 +51,22 @@ export default function WorkOrdersPage() {
   async function handleNew() {
     await fetchNextNumber();
     setModalOpen(true);
+  }
+
+  async function handleView(wo: WorkOrder) {
+    try {
+      const res = await fetch(`/api/work-orders/${wo.id}`);
+      if (res.ok) {
+        const full = await res.json();
+        setViewData(full);
+        setViewOpen(true);
+      } else {
+        alert("Error al cargar el trabajo");
+      }
+    } catch (err) {
+      console.error("[work-orders page] view error:", err);
+      alert("Error al cargar el trabajo");
+    }
   }
 
   async function handleSubmit(payload: Record<string, any>, items: WorkOrderItemInput[]) {
@@ -88,7 +107,7 @@ export default function WorkOrdersPage() {
       </div>
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
-        <WorkOrderTable data={workOrders} />
+        <WorkOrderTable data={workOrders} onRowClick={handleView} />
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -102,6 +121,17 @@ export default function WorkOrdersPage() {
             onSubmit={handleSubmit}
             onCancel={() => setModalOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent size="lg" className="max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--theme-dark)] text-lg font-bold">
+              DETALLE DE TRABAJO
+            </DialogTitle>
+          </DialogHeader>
+          {viewData && <WorkOrderDetailView workOrder={viewData} />}
         </DialogContent>
       </Dialog>
     </div>
