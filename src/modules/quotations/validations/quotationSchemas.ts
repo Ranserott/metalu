@@ -19,6 +19,10 @@ export const QuotationSchema = z.object({
   discount: z.string().optional(),
   discountType: z.enum(["NONE", "AMOUNT", "PERCENT"]).optional().default("NONE"),
   notes: z.string().optional(),
+  descripcionTrabajo: z.string().optional(),
+  plazoEntrega: z.string().optional(),
+  atencion: z.string().optional(),
+  area: z.string().optional(),
   items: z.array(QuotationItemSchema).optional().default([]),
 });
 

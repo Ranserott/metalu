@@ -19,6 +19,7 @@ export async function getQuotationById(id: string) {
     where: { id, deletedAt: null },
     include: {
       client: { select: { id: true, name: true, code: true, address: true, city: true } },
+      createdBy: { select: { id: true, name: true } },
       items: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });
@@ -47,6 +48,10 @@ export async function createQuotation(
       discount: data.discount ? parseFloat(data.discount) : 0,
       discountType: (data.discountType as any) ?? "NONE",
       notes: data.notes,
+      descripcionTrabajo: data.descripcionTrabajo,
+      plazoEntrega: data.plazoEntrega,
+      atencion: data.atencion,
+      area: data.area,
       createdById: userId,
       items: {
         create: items.map((item) => ({

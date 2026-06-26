@@ -216,9 +216,13 @@ model Quotation {
   tax          Decimal               @db.Decimal(12, 2)
   total        Decimal               @db.Decimal(12, 2)
   discount     Decimal?              @default(0) @db.Decimal(12, 2)
-  discountType QuotationDiscountType @default(NONE) @map("discount_type")
-  notes        String?
-  createdAt    DateTime              @default(now()) @map("created_at")
+  discountType      QuotationDiscountType @default(NONE) @map("discount_type")
+  notes             String?
+  descripcionTrabajo String?               @map("descripcion_trabajo")
+  plazoEntrega      String?                @map("plazo_entrega")
+  atencion          String?
+  area              String?
+  createdAt         DateTime               @default(now()) @map("created_at")
   updatedAt    DateTime              @updatedAt @map("updated_at")
   deletedAt    DateTime?             @map("deleted_at")
   createdById  String?               @map("created_by_id")
