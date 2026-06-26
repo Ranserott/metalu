@@ -18,7 +18,7 @@ export async function getQuotationById(id: string) {
   return await prisma.quotation.findUnique({
     where: { id, deletedAt: null },
     include: {
-      client: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true, code: true, address: true, city: true } },
       items: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });
