@@ -91,8 +91,8 @@ type Props = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
-    paddingBottom: 80,
+    paddingTop: 28,
+    paddingBottom: 60,
     paddingHorizontal: 40,
     fontFamily: PDF_FONT_FAMILY,
     fontSize: 10,
@@ -102,10 +102,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 14,
+    marginBottom: 10,
   },
   logo: {
-    width: 110,
+    // BOTH width and height must be set: @react-pdf/renderer reads the SVG's
+    // intrinsic dimensions (512x512 in this file) when height is missing,
+    // which renders the logo at full size regardless of `width`.
+    width: 70,
+    height: 70,
   },
   headerRight: {
     flexDirection: "column",
@@ -113,9 +117,9 @@ const styles = StyleSheet.create({
     maxWidth: 360,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 700,
-    marginBottom: 6,
+    marginBottom: 4,
     fontFamily: PDF_FONT_FAMILY,
   },
   companyName: {
@@ -132,7 +136,7 @@ const styles = StyleSheet.create({
   clientRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   clientBlock: {
     flexDirection: "column",
@@ -147,11 +151,11 @@ const styles = StyleSheet.create({
   },
   descripcionLine: {
     fontSize: 10,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   sectionBar: {
     backgroundColor: "#e6e6e6",
-    paddingVertical: 4,
+    paddingVertical: 3,
     paddingHorizontal: 6,
     marginTop: 6,
     marginBottom: 0,
