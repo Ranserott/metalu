@@ -140,25 +140,45 @@ const styles = StyleSheet.create({
   box: {
     border: 1,
     borderColor: "#111",
-    padding: 6,
     marginBottom: 8,
   },
-  boxRow: {
+  boxHeaderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    borderBottom: 1,
+    borderColor: "#111",
   },
-  boxCol: {
-    flexDirection: "column",
-    width: "48%",
+  boxFieldRow: {
+    flexDirection: "row",
+    borderBottom: 1,
+    borderColor: "#111",
+    minHeight: 18,
   },
-  boxLine: {
+  boxFieldRowLast: {
+    borderBottom: 0,
+  },
+  boxLabelCell: {
+    width: "20%",
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     fontSize: 10,
-    marginBottom: 2,
+    fontWeight: 700,
+    borderRight: 1,
+    borderColor: "#111",
+  },
+  boxValueCell: {
+    width: "30%",
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    fontSize: 10,
+    borderRight: 1,
+    borderColor: "#111",
+  },
+  boxValueCellLast: {
+    borderRight: 0,
   },
   entregadoBox: {
     border: 1,
     borderColor: "#111",
-    padding: 6,
     marginBottom: 8,
   },
   sectionBar: {
@@ -313,34 +333,55 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
           </View>
         </View>
 
-        {/* CLIENT INFO BOX — 2 columns */}
+        {/* CLIENT INFO BOX — 2-column grid with row dividers */}
         <View style={styles.box}>
-          <View style={styles.boxRow}>
-            <View style={styles.boxCol}>
-              <Text style={styles.boxLine}>Cliente: {clienteName}</Text>
-              <Text style={styles.boxLine}>Rut: {rut || "—"}</Text>
-              <Text style={styles.boxLine}>Direccion: {direccion}</Text>
-              <Text style={styles.boxLine}>Celular: {workOrder.celular || "—"}</Text>
+          {[
+            ["Cliente", clienteName, "Fecha", formatDate(fecha)],
+            [
+              "Rut",
+              rut || "—",
+              "Ciudad",
+              ciudad || "—",
+            ],
+            [
+              "Direccion",
+              direccion,
+              "Condiciones Pago",
+              workOrder.condicionesPago || "—",
+            ],
+            [
+              "Celular",
+              workOrder.celular || "—",
+              "Plazo Entrega",
+              workOrder.plazoDias != null ? `${workOrder.plazoDias} días` : "—",
+            ],
+          ].map(([lblL, valL, lblR, valR], idx, arr) => (
+            <View
+              key={idx}
+              style={
+                idx === arr.length - 1
+                  ? styles.boxFieldRowLast
+                  : styles.boxFieldRow
+              }
+            >
+              <Text style={styles.boxLabelCell}>{lblL}</Text>
+              <Text style={styles.boxValueCell}>{valL}</Text>
+              <Text style={styles.boxLabelCell}>{lblR}</Text>
+              <Text style={styles.boxValueCellLast}>{valR}</Text>
             </View>
-            <View style={styles.boxCol}>
-              <Text style={styles.boxLine}>Fecha: {formatDate(fecha)}</Text>
-              <Text style={styles.boxLine}>Ciudad: {ciudad || "—"}</Text>
-              <Text style={styles.boxLine}>
-                Condiciones Pago: {workOrder.condicionesPago || "—"}
-              </Text>
-              <Text style={styles.boxLine}>
-                Plazo Entrega:{" "}
-                {workOrder.plazoDias != null ? `${workOrder.plazoDias} días` : "—"}
-              </Text>
-            </View>
-          </View>
+          ))}
         </View>
 
         {/* ENTREGADO POR BOX */}
         <View style={styles.entregadoBox}>
-          <Text style={styles.boxLine}>
-            Entregado por: {workOrder.entregadoPor || "—"}
-          </Text>
+          <View style={styles.boxFieldRow}>
+            <Text style={styles.boxLabelCell}>Entregado por:</Text>
+            <Text style={[styles.boxValueCell, styles.boxValueCellLast]}>
+              {workOrder.entregadoPor || "—"}
+            </Text>
+            <Text style={styles.boxLabelCell}> </Text>
+            <Text style={styles.boxValueCellLast}> </Text>
+          </View>
         </View>
 
         {/* ITEMS TABLE */}
