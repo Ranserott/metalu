@@ -41,14 +41,22 @@ export async function GET(
     ).toBuffer();
 
     const filename = `Cotizacion-${quotation.number}.pdf`;
-    const bodyBytes = new Uint8Array(buffer as unknown as Uint8Array);
 
-    return new NextResponse(bodyBytes, {
+    // Node Buffer is a valid BodyInit. Do NOT re-wrap it in `new Uint8Array(...)`
+    // — depending on the buffer's underlying ArrayBuffer offset, that
+    // constructor can silently produce a 0-length Uint8Array, which is why the
+    // browser was getting a 0-byte download.
+    console.log(
+      `[pdf] quotation=${quotation.number} buffer.length=${buffer.length} ` +
+      `byteOffset=${buffer.byteOffset} byteLength=${buffer.byteLength}`
+    );
+
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        "Content-Length": String(bodyBytes.byteLength),
+        "Content-Length": String(buffer.byteLength),
         "Cache-Control": "no-store",
       },
     });
