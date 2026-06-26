@@ -13,9 +13,23 @@
  *
  * `registerPdfFonts` is idempotent — safe to call multiple times.
  */
+import { join } from "path";
 import { Font } from "@react-pdf/renderer";
 
 const FAMILY = "EBGaramond";
+
+/**
+ * @react-pdf/renderer runs server-side in plain Node and does NOT understand
+ * webpack module aliases (`@fontsource/...`) or Next.js public paths. We resolve
+ * to absolute filesystem paths via process.cwd().
+ */
+const FONT_DIR = join(
+  process.cwd(),
+  "node_modules",
+  "@fontsource",
+  "eb-garamond",
+  "files"
+);
 
 export function registerPdfFonts(): void {
   // Idempotency guard: @react-pdf/renderer's Font.register throws if the same
@@ -28,20 +42,20 @@ export function registerPdfFonts(): void {
     family: FAMILY,
     fonts: [
       {
-        src: "@fontsource/eb-garamond/files/eb-garamond-latin-400-normal.woff2",
+        src: join(FONT_DIR, "eb-garamond-latin-400-normal.woff2"),
         fontWeight: 400,
       },
       {
-        src: "@fontsource/eb-garamond/files/eb-garamond-latin-700-normal.woff2",
+        src: join(FONT_DIR, "eb-garamond-latin-700-normal.woff2"),
         fontWeight: 700,
       },
       {
-        src: "@fontsource/eb-garamond/files/eb-garamond-latin-400-italic.woff2",
+        src: join(FONT_DIR, "eb-garamond-latin-400-italic.woff2"),
         fontWeight: 400,
         fontStyle: "italic",
       },
       {
-        src: "@fontsource/eb-garamond/files/eb-garamond-latin-700-italic.woff2",
+        src: join(FONT_DIR, "eb-garamond-latin-700-italic.woff2"),
         fontWeight: 700,
         fontStyle: "italic",
       },

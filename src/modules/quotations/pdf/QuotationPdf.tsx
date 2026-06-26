@@ -1,9 +1,17 @@
 import React from "react";
+import { join } from "path";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
 import { registerPdfFonts, PDF_FONT_FAMILY } from "@/lib/pdf/fonts";
 
 registerPdfFonts();
+
+/**
+ * @react-pdf/renderer runs server-side in plain Node. It does NOT resolve
+ * Next.js public paths (`/logo.svg`). For PDF rendering, resolve the logo to
+ * an absolute filesystem path inside /public.
+ */
+const LOGO_ABS_PATH = join(process.cwd(), "public", "logo.svg");
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -336,7 +344,7 @@ export function QuotationPdf({ quotation }: Props) {
       <Page size="A4" style={styles.page}>
         {/* HEADER */}
         <View style={styles.headerRow}>
-          <Image src={COMPANY.logoPath} style={styles.logo} />
+          <Image src={LOGO_ABS_PATH} style={styles.logo} />
           <View style={styles.headerRight}>
             <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
