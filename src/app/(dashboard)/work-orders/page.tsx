@@ -16,6 +16,7 @@ export default function WorkOrdersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewData, setViewData] = useState<WorkOrder | null>(null);
+  const [editData, setEditData] = useState<any>(undefined);
   const [nextNumber, setNextNumber] = useState<string>("");
 
   const fetchWorkOrders = async () => {
@@ -50,6 +51,7 @@ export default function WorkOrdersPage() {
 
   async function handleNew() {
     await fetchNextNumber();
+    setEditData(undefined);
     setModalOpen(true);
   }
 
@@ -69,15 +71,36 @@ export default function WorkOrdersPage() {
     }
   }
 
+  async function handleEdit(wo: WorkOrder) {
+    try {
+      const res = await fetch(`/api/work-orders/${wo.id}`);
+      if (res.ok) {
+        const full = await res.json();
+        setEditData(full);
+        setModalOpen(true);
+      } else {
+        alert("Error al cargar el trabajo");
+      }
+    } catch (err) {
+      console.error("[work-orders page] edit error:", err);
+      alert("Error al cargar el trabajo");
+    }
+  }
+
   async function handleSubmit(payload: Record<string, any>, items: WorkOrderItemInput[]) {
-    const res = await fetch("/api/work-orders", {
-      method: "POST",
+    const isEdit = !!payload.id;
+    const url = isEdit ? `/api/work-orders/${payload.id}` : "/api/work-orders";
+    const method = isEdit ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, items }),
     });
     if (res.ok) {
       await fetchWorkOrders();
       setModalOpen(false);
+      setEditData(undefined);
     } else {
       const errorData = await res.json().catch(() => ({}));
       console.error("[work-orders page] save error:", errorData);
@@ -107,19 +130,31 @@ export default function WorkOrdersPage() {
       </div>
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
-        <WorkOrderTable data={workOrders} onRowClick={handleView} />
+        <WorkOrderTable
+          data={workOrders}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDeleteSuccess={fetchWorkOrders}
+        />
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent size="full" className="max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-[var(--theme-dark)] text-lg font-bold">NUEVO TRABAJO</DialogTitle>
+            <DialogTitle className="text-[var(--theme-dark)] text-lg font-bold">
+              {editData?.id ? "MODIFICAR TRABAJO" : "NUEVO TRABAJO"}
+            </DialogTitle>
           </DialogHeader>
           <WorkOrderForm
-            key={nextNumber || "new"}
-            initialNumber={nextNumber}
+            key={editData?.id || nextNumber || "new"}
+            initialNumber={editData ? undefined : nextNumber}
+            initialData={editData?.id ? editData : null}
+            editMode={!!editData?.id}
             onSubmit={handleSubmit}
-            onCancel={() => setModalOpen(false)}
+            onCancel={() => {
+              setModalOpen(false);
+              setEditData(undefined);
+            }}
           />
         </DialogContent>
       </Dialog>

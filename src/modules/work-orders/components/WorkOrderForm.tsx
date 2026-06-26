@@ -13,6 +13,39 @@ type ClientInfo = { id: string; name: string };
 
 type WorkOrderFormProps = {
   initialNumber?: string;
+  initialData?: {
+    id: string;
+    number: string;
+    clientId: string;
+    clientName?: string;
+    title: string;
+    rut?: string | null;
+    razonSocial?: string | null;
+    entregadoPor?: string | null;
+    celular?: string | null;
+    quotationId?: string | null;
+    fechaTrabajo?: Date | string | null;
+    local?: string | null;
+    encargado?: string | null;
+    encargadoId?: string | null;
+    condicionesPago?: string | null;
+    nroFactura?: string | null;
+    nroGuia?: string | null;
+    tipoOC?: string | null;
+    nroOrdenCompra?: string | null;
+    fechaEntrega?: Date | string | null;
+    plazoDias?: number | null;
+    description?: string | null;
+    descuentoPorcentaje?: number | string | null;
+    materials?: Array<{
+      material: string;
+      quantity: number | string;
+      unit?: string | null;
+      unitPrice?: number | string | null;
+      total?: number | string | null;
+    }>;
+  } | null;
+  editMode?: boolean;
   onSubmit: (data: Record<string, any>, items: WorkOrderItemInput[]) => Promise<void>;
   onCancel: () => void;
 };
@@ -37,7 +70,7 @@ const CONDICIONES_PAGO = [
   "15 DÍAS",
 ];
 
-export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFormProps) {
+export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, onCancel }: WorkOrderFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [quotationModalOpen, setQuotationModalOpen] = useState(false);
@@ -77,6 +110,62 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
       setRazonSocial(selectedClient.name);
     }
   }, [selectedClient]);
+
+  // Seed form state when entering edit mode
+  useEffect(() => {
+    if (!editMode || !initialData) return;
+
+    const toDateInput = (v: Date | string | null | undefined) => {
+      if (!v) return "";
+      const d = typeof v === "string" ? new Date(v) : v;
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toISOString().split("T")[0];
+    };
+    const toNum = (v: any): number | "" => {
+      if (v === null || v === undefined || v === "") return "";
+      const n = typeof v === "number" ? v : parseFloat(String(v));
+      return Number.isFinite(n) ? n : "";
+    };
+
+    setTitulo(initialData.title ?? "");
+    setRut(initialData.rut ?? "");
+    setRazonSocial(initialData.razonSocial ?? initialData.clientName ?? "");
+    setEntregadoPor(initialData.entregadoPor ?? "");
+    setCelular(initialData.celular ?? "");
+    setNroCotizacion(initialData.quotationId ?? "");
+    setFechaTrabajo(toDateInput(initialData.fechaTrabajo));
+    setLocal(initialData.local ?? "CASA MATRIZ");
+    setEncargadoId(initialData.encargadoId ?? null);
+    setEncargadoName(initialData.encargado ?? "");
+    setCondicionesPago(initialData.condicionesPago ?? "30 DÍAS CRÉDITO");
+    setNroFactura(initialData.nroFactura ?? "");
+    setNroGuia(initialData.nroGuia ?? "");
+    setTipoOC(initialData.tipoOC ?? "ORDEN INTERNO");
+    setNroOrdenCompra(initialData.nroOrdenCompra ?? "");
+    setFechaEntrega(toDateInput(initialData.fechaEntrega));
+    setPlazoDias(toNum(initialData.plazoDias) as number | "");
+    setObservaciones(initialData.description ?? "");
+    setDescuentoPorcentaje(toNum(initialData.descuentoPorcentaje) as number | "");
+
+    const seedItems: LineItem[] = (initialData.materials ?? [])
+      .filter((m) => m.material && m.material.trim() !== "")
+      .map((m) => ({
+        description: m.material,
+        quantity: typeof m.quantity === "number" ? m.quantity : parseFloat(String(m.quantity)) || 1,
+        unitPrice:
+          typeof m.unitPrice === "number"
+            ? m.unitPrice
+            : parseFloat(String(m.unitPrice ?? 0)) || 0,
+      }));
+    setItems(seedItems.length > 0 ? seedItems : [{ description: "", quantity: 1, unitPrice: 0 }]);
+
+    if (initialData.clientId) {
+      setSelectedClient({
+        id: initialData.clientId,
+        name: initialData.clientName ?? initialData.razonSocial ?? "",
+      });
+    }
+  }, [editMode, initialData]);
 
   function handleClientSelect(client: ClientInfo) {
     setSelectedClient(client);
@@ -141,6 +230,7 @@ export function WorkOrderForm({ initialNumber, onSubmit, onCancel }: WorkOrderFo
     setSubmitting(true);
     try {
       const payload: Record<string, any> = {
+        ...(editMode && initialData?.id ? { id: initialData.id } : {}),
         number,
         clientId: selectedClient.id,
         title: titulo,
