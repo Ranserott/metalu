@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma/prisma";
 import { WorkOrderInput, WorkOrderItemInput } from "../validations/workOrderSchemas";
 
 const includeRelations = {
-  client: { select: { id: true, name: true } },
+  client: { select: { id: true, name: true, code: true, address: true, city: true } },
   materials: { orderBy: { createdAt: "asc" as const } },
   encargadoRef: {
     select: {
