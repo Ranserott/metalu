@@ -42,20 +42,20 @@ export function registerPdfFonts(): void {
     family: FAMILY,
     fonts: [
       {
-        src: join(FONT_DIR, "eb-garamond-latin-400-normal.woff2"),
+        src: join(FONT_DIR, "eb-garamond-latin-400-normal.woff"),
         fontWeight: 400,
       },
       {
-        src: join(FONT_DIR, "eb-garamond-latin-700-normal.woff2"),
+        src: join(FONT_DIR, "eb-garamond-latin-700-normal.woff"),
         fontWeight: 700,
       },
       {
-        src: join(FONT_DIR, "eb-garamond-latin-400-italic.woff2"),
+        src: join(FONT_DIR, "eb-garamond-latin-400-italic.woff"),
         fontWeight: 400,
         fontStyle: "italic",
       },
       {
-        src: join(FONT_DIR, "eb-garamond-latin-700-italic.woff2"),
+        src: join(FONT_DIR, "eb-garamond-latin-700-italic.woff"),
         fontWeight: 700,
         fontStyle: "italic",
       },
