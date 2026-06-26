@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { QuotationPrintModal } from "./QuotationPrintModal";
 import { Quotation } from "../types/quotation";
 
 type Props = {
@@ -32,6 +36,8 @@ const statusColors: Record<string, string> = {
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
 export function QuotationView({ quotation }: Props) {
+  const [printOpen, setPrintOpen] = useState(false);
+
   const materials = (quotation.items || []).filter((i) => i.type === "MATERIAL");
   const works = (quotation.items || []).filter((i) => i.type === "WORK");
   const materialsTotal = materials.reduce((sum, i) => sum + Number(i.total), 0);
@@ -50,8 +56,27 @@ export function QuotationView({ quotation }: Props) {
       ? `Descuento (${percentValue}%):`
       : "Descuento:";
 
+  const printClient = {
+    id: quotation.client.id,
+    name: quotation.client.name,
+    code: (quotation as { client?: { code?: string } }).client?.code ?? "",
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold">Cotización {quotation.number}</h1>
+          <p className="text-sm text-muted-foreground">{quotation.client?.name || "—"}</p>
+        </div>
+        <Button
+          onClick={() => setPrintOpen(true)}
+          className="bg-[#14679C] hover:bg-[#14679C]/90"
+        >
+          <Printer className="h-4 w-4 mr-2" />
+          Imprimir PDF
+        </Button>
+      </div>
       {/* Header info */}
       <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
         <div>
@@ -187,6 +212,12 @@ export function QuotationView({ quotation }: Props) {
           <span className="text-[var(--theme-dark)]">{clp.format(total)}</span>
         </div>
       </div>
+
+      <QuotationPrintModal
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        quotation={{ ...quotation, client: printClient }}
+      />
     </div>
   );
 }
