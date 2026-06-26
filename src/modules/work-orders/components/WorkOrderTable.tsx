@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { WorkOrder } from "../types/workOrder";
 import { DataTable } from "@/components/tables/DataTable";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
+
+const STATUS_OPTIONS = [
+  { value: "TODO", label: "Pendiente" },
+  { value: "IN_PROGRESS", label: "En Progreso" },
+  { value: "QUALITY_CHECK", label: "Control de Calidad" },
+  { value: "COMPLETED", label: "Completado" },
+] as const;
 
 const statusLabels: Record<string, string> = {
   TODO: "Pendiente",
@@ -28,10 +42,18 @@ type Props = {
   onView?: (wo: WorkOrder) => void;
   onEdit?: (wo: WorkOrder) => void;
   onDeleteSuccess?: () => void;
+  onStatusChange?: (wo: WorkOrder, newStatus: string) => Promise<void> | void;
 };
 
-export function WorkOrderTable({ data, onView, onEdit, onDeleteSuccess }: Props) {
+export function WorkOrderTable({
+  data,
+  onView,
+  onEdit,
+  onDeleteSuccess,
+  onStatusChange,
+}: Props) {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState<string | null>(null);
 
   const columns: ColumnDef<WorkOrder>[] = [
     {
@@ -52,11 +74,57 @@ export function WorkOrderTable({ data, onView, onEdit, onDeleteSuccess }: Props)
       accessorKey: "status",
       header: "Estado",
       cell: ({ row }) => {
-        const status = row.original.status;
+        const wo = row.original;
+        const isLoading = statusLoading === wo.id;
+        if (!onStatusChange) {
+          return (
+            <span
+              className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                statusColors[wo.status] || ""
+              }`}
+            >
+              {statusLabels[wo.status] || wo.status}
+            </span>
+          );
+        }
         return (
-          <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${statusColors[status] || ""}`}>
-            {statusLabels[status] || status}
-          </span>
+          <div className="flex items-center gap-1">
+            <Select
+              value={wo.status}
+              onValueChange={async (value) => {
+                if (value === wo.status) return;
+                setStatusLoading(wo.id);
+                try {
+                  await onStatusChange(wo, value);
+                } finally {
+                  setStatusLoading(null);
+                }
+              }}
+              disabled={isLoading}
+            >
+              <SelectTrigger
+                className={`h-7 px-2 py-0 text-xs font-semibold rounded border-0 ${
+                  statusColors[wo.status] || ""
+                } focus:ring-1 focus:ring-[var(--theme-primary)]`}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                        statusColors[opt.value] || ""
+                      }`}
+                    >
+                      {opt.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isLoading && <Loader2 className="h-3 w-3 animate-spin text-gray-500" />}
+          </div>
         );
       },
     },

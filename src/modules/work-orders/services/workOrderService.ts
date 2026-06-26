@@ -107,6 +107,14 @@ export async function deleteWorkOrder(id: string) {
   });
 }
 
+export async function updateWorkOrderStatus(id: string, status: string) {
+  return await prisma.workOrder.update({
+    where: { id },
+    data: { status: status as any },
+    include: includeRelations,
+  });
+}
+
 export async function generateWorkOrderNumber() {
   const count = await prisma.workOrder.count();
   return `TRAB-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;

@@ -87,6 +87,24 @@ export default function WorkOrdersPage() {
     }
   }
 
+  async function handleStatusChange(wo: WorkOrder, newStatus: string) {
+    try {
+      const res = await fetch(`/api/work-orders/${wo.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Error al actualizar el estado");
+      }
+      await fetchWorkOrders();
+    } catch (err: any) {
+      console.error("[work-orders page] status change error:", err);
+      alert(err?.message ?? "Error al actualizar el estado");
+    }
+  }
+
   async function handleSubmit(payload: Record<string, any>, items: WorkOrderItemInput[]) {
     const isEdit = !!payload.id;
     const url = isEdit ? `/api/work-orders/${payload.id}` : "/api/work-orders";
@@ -135,6 +153,7 @@ export default function WorkOrdersPage() {
           onView={handleView}
           onEdit={handleEdit}
           onDeleteSuccess={fetchWorkOrders}
+          onStatusChange={handleStatusChange}
         />
       </div>
 
