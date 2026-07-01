@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { WorkOrder } from "../types/workOrder";
 import { DataTable } from "@/components/tables/DataTable";
+import { TableToolbar } from "@/components/tables/TableToolbar";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WORK_ORDER_SEARCHABLE_KEYS } from "../constants/searchableKeys";
+import { WORK_ORDER_TABLE_FILTERS } from "../constants/tableFilters";
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
@@ -37,6 +40,26 @@ const statusColors: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-800",
 };
 
+function normalize(s: string | null | undefined): string {
+  return (s ?? "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+const workOrderGlobalFilter: FilterFn<WorkOrder> = (row, _columnId, filterValue: string) => {
+  if (!filterValue) return true;
+  const q = normalize(filterValue);
+  const haystack = [
+    ...WORK_ORDER_SEARCHABLE_KEYS.map((k) =>
+      normalize(row.original[k as keyof WorkOrder] as unknown as string)
+    ),
+    normalize(row.original.client?.name),
+  ].join(" ");
+  return haystack.includes(q);
+};
+
 type Props = {
   data: WorkOrder[];
   onView?: (wo: WorkOrder) => void;
@@ -54,6 +77,40 @@ export function WorkOrderTable({
 }: Props) {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string | undefined>>({});
+
+  const columnFilters = useMemo(
+    () =>
+      Object.entries(filterValues)
+        .filter(([, v]) => v !== undefined)
+        .map(([id, value]) => ({ id, value })),
+    [filterValues]
+  );
+
+  const handleFilterChange = (key: string, value: string | undefined) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const dynamicFilters = useMemo(() => {
+    const clienteOptions = Array.from(
+      new Set(
+        data
+          .map((wo) => wo.client?.name)
+          .filter((name): name is string => Boolean(name))
+      )
+    )
+      .sort()
+      .map((name) => ({ value: name, label: name }));
+    return [
+      ...WORK_ORDER_TABLE_FILTERS,
+      {
+        key: "client", // matches the existing column accessorKey
+        label: "Cliente",
+        options: clienteOptions,
+      },
+    ];
+  }, [data]);
 
   const columns: ColumnDef<WorkOrder>[] = [
     {
@@ -65,6 +122,9 @@ export function WorkOrderTable({
       accessorKey: "client",
       header: "Cliente",
       cell: ({ row }) => row.original.client?.name || row.original.razonSocial || "—",
+      filterFn: (row, _columnId, filterValue: string) => {
+        return row.original.client?.name === filterValue;
+      },
     },
     {
       accessorKey: "title",
@@ -201,5 +261,32 @@ export function WorkOrderTable({
     },
   ];
 
-  return <DataTable columns={columns} data={data} />;
+  return (
+    <>
+      <TableToolbar
+        searchPlaceholder="Buscar por N°, título, RUT, cliente..."
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        filters={dynamicFilters}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+      />
+      <DataTable
+        columns={columns}
+        data={data}
+        globalFilter={searchValue}
+        onGlobalFilterChange={setSearchValue}
+        globalFilterFn={workOrderGlobalFilter}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          const next = typeof updater === "function" ? updater(columnFilters) : updater;
+          const map: Record<string, string | undefined> = {};
+          for (const f of next) {
+            map[f.id] = f.value as string | undefined;
+          }
+          setFilterValues(map);
+        }}
+      />
+    </>
+  );
 }
