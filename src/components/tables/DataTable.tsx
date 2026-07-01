@@ -8,6 +8,8 @@ import {
   getFilteredRowModel,
   flexRender,
   ColumnDef,
+  ColumnFiltersState,
+  FilterFn,
   SortingState,
 } from "@tanstack/react-table";
 import { useState } from "react";
@@ -19,16 +21,39 @@ type DataTableProps<T> = {
   columns: ColumnDef<T>[];
   data: T[];
   onRowClick?: (row: T) => void;
+  globalFilter?: string;
+  onGlobalFilterChange?: (v: string) => void;
+  globalFilterFn?: FilterFn<T>;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: React.Dispatch<React.SetStateAction<ColumnFiltersState>>;
 };
 
-export function DataTable<T>({ columns, data, onRowClick }: DataTableProps<T>) {
+export function DataTable<T>({
+  columns,
+  data,
+  onRowClick,
+  globalFilter,
+  onGlobalFilterChange,
+  globalFilterFn,
+  columnFilters,
+  onColumnFiltersChange,
+}: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
+  const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: {
+      sorting,
+      globalFilter: globalFilter ?? internalGlobalFilter,
+      columnFilters: columnFilters ?? internalColumnFilters,
+    },
     onSortingChange: setSorting,
+    onGlobalFilterChange: onGlobalFilterChange ?? setInternalGlobalFilter,
+    onColumnFiltersChange: onColumnFiltersChange ?? setInternalColumnFilters,
+    ...(globalFilterFn ? { globalFilterFn } : {}),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
