@@ -1,19 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { Client } from "../types/client";
 import { ClientInput } from "../validations/clientSchemas";
 import { DataTable } from "@/components/tables/DataTable";
+import { TableToolbar } from "@/components/tables/TableToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientForm } from "./ClientForm";
 import { ClientDetailModal } from "./ClientDetailModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Eye, Pencil, Power, UserPlus } from "lucide-react";
+import { CLIENT_SEARCHABLE_KEYS } from "../constants/searchableKeys";
+import { CLIENT_TABLE_FILTERS } from "../constants/tableFilters";
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
+
+/** Strip diacritics and lowercase for accent-insensitive search. */
+function normalize(s: string | null | undefined): string {
+  return (s ?? "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+const clientGlobalFilter: FilterFn<Client> = (row, _columnId, filterValue: string) => {
+  if (!filterValue) return true;
+  const q = normalize(filterValue);
+  const haystack = CLIENT_SEARCHABLE_KEYS
+    .map((k) => row.original[k] as unknown)
+    .map(normalize as (v: unknown) => string)
+    .join(" ");
+  return haystack.includes(q);
+};
 
 export function ClientTable({ data }: { data: Client[] }) {
   const router = useRouter();
@@ -22,6 +44,21 @@ export function ClientTable({ data }: { data: Client[] }) {
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [toggleClient, setToggleClient] = useState<Client | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const [searchValue, setSearchValue] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string | undefined>>({});
+
+  const columnFilters = useMemo(
+    () =>
+      Object.entries(filterValues)
+        .filter(([, v]) => v !== undefined)
+        .map(([id, value]) => ({ id, value })),
+    [filterValues]
+  );
+
+  const handleFilterChange = (key: string, value: string | undefined) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  };
 
   async function handleCreateClient(data: ClientInput) {
     const res = await fetch("/api/clients", {
@@ -161,7 +198,15 @@ export function ClientTable({ data }: { data: Client[] }) {
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center gap-3 flex-wrap">
+        <TableToolbar
+          searchPlaceholder="Buscar por nombre, RUT, email..."
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+          filters={CLIENT_TABLE_FILTERS}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+        />
         <Button
           onClick={() => setCreateOpen(true)}
           className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)] hover:from-[var(--theme-dark)] hover:to-[var(--theme-darker)] text-white"
@@ -170,7 +215,22 @@ export function ClientTable({ data }: { data: Client[] }) {
           Registrar Cliente
         </Button>
       </div>
-      <DataTable columns={columns} data={data} />
+      <DataTable
+        columns={columns}
+        data={data}
+        globalFilter={searchValue}
+        onGlobalFilterChange={setSearchValue}
+        globalFilterFn={clientGlobalFilter}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          const next = typeof updater === "function" ? updater(columnFilters) : updater;
+          const map: Record<string, string | undefined> = {};
+          for (const f of next) {
+            map[f.id] = f.value as string | undefined;
+          }
+          setFilterValues(map);
+        }}
+      />
 
       <ClientForm
         open={createOpen}
