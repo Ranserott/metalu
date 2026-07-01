@@ -82,7 +82,7 @@ src/modules/<modulo>/
 **`DataTable.tsx`** — Modified to accept controlled filter state.
 - New optional props: `globalFilter?: string`, `onGlobalFilterChange?: (v: string) => void`, `columnFilters?: ColumnFiltersState`, `onColumnFiltersChange?: (updater: ColumnFiltersState | ((old: ColumnFiltersState) => ColumnFiltersState)) => void`.
 - When provided, passes them to `useReactTable({ state: ... })`. Defaults preserve existing behavior (no filter applied externally).
-- Adds a new optional prop: `globalFilterFn?: FilterFn<T>` — when set, applied to `useReactTable({ filterFns: { global: fn }, globalFilterFn: fn })`. When NOT set, falls back to tanstack's default includesString filter.
+- Adds a new optional prop: `globalFilterFn?: FilterFn<T>` — when set, passed directly to `useReactTable({ globalFilterFn: fn })`. When NOT set, falls back to tanstack's default `includesString` filter.
 - Does NOT render the toolbar itself — each `*Table.tsx` mounts `<TableToolbar>` + `<DataTable>` as siblings.
 
 ### Per-Module Constants
