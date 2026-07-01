@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { Quotation } from "../types/quotation";
 import { DataTable } from "@/components/tables/DataTable";
+import { TableToolbar } from "@/components/tables/TableToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Eye, FileText } from "lucide-react";
+import { QUOTATION_SEARCHABLE_KEYS } from "../constants/searchableKeys";
+import { QUOTATION_TABLE_FILTERS } from "../constants/tableFilters";
 
 type Props = {
   data: Quotation[];
@@ -29,8 +32,42 @@ const statusLabels: Record<string, string> = {
   REJECTED: "Rechazado",
 };
 
+function normalize(s: string | null | undefined): string {
+  return (s ?? "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+const quotationGlobalFilter: FilterFn<Quotation> = (row, _columnId, filterValue: string) => {
+  if (!filterValue) return true;
+  const q = normalize(filterValue);
+  const haystack = [
+    ...QUOTATION_SEARCHABLE_KEYS.map((k) =>
+      normalize(row.original[k as keyof Quotation] as unknown as string)
+    ),
+    normalize(row.original.client?.name),
+  ].join(" ");
+  return haystack.includes(q);
+};
+
 export function QuotationTable({ data, onEdit, onView, onDeleteSuccess }: Props) {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string | undefined>>({});
+
+  const columnFilters = useMemo(
+    () =>
+      Object.entries(filterValues)
+        .filter(([, v]) => v !== undefined)
+        .map(([id, value]) => ({ id, value })),
+    [filterValues]
+  );
+
+  const handleFilterChange = (key: string, value: string | undefined) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  };
 
   const columns: ColumnDef<Quotation>[] = [
     {
@@ -112,5 +149,32 @@ export function QuotationTable({ data, onEdit, onView, onDeleteSuccess }: Props)
     },
   ];
 
-  return <DataTable columns={columns} data={data} />;
+  return (
+    <>
+      <TableToolbar
+        searchPlaceholder="Buscar por número, cliente, notas..."
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        filters={QUOTATION_TABLE_FILTERS}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+      />
+      <DataTable
+        columns={columns}
+        data={data}
+        globalFilter={searchValue}
+        onGlobalFilterChange={setSearchValue}
+        globalFilterFn={quotationGlobalFilter}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          const next = typeof updater === "function" ? updater(columnFilters) : updater;
+          const map: Record<string, string | undefined> = {};
+          for (const f of next) {
+            map[f.id] = f.value as string | undefined;
+          }
+          setFilterValues(map);
+        }}
+      />
+    </>
+  );
 }
