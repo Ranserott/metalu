@@ -23,9 +23,16 @@ for triple in aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc; d
     bundle_root="src-tauri/target/$triple/release/bundle"
     if [ ! -d "$bundle_root" ]; then continue; fi
     out_dir="$DIST_DIR/$bt-$triple"
+    # Wipe any stale artifacts from a previous release of the same version
+    # so a deleted/renamed bundle file doesn't survive a fresh find -exec cp.
+    rm -rf "$out_dir"
     mkdir -p "$out_dir"
-    find "$bundle_root" \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" \) -exec cp {} "$out_dir/" \;
-    found=1
+    # Count actual files copied so we only set `found=1` when something landed
+    # in $out_dir (the dir's existence is not enough).
+    copied=$(find "$bundle_root" \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" \) -exec cp {} "$out_dir/" \; -print | wc -l | tr -d ' ')
+    if [ "$copied" -gt 0 ]; then
+      found=1
+    fi
   done
 done
 

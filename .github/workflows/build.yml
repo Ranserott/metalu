@@ -1,10 +1,35 @@
 name: build-desktop
 
+# Minimum GITHUB_TOKEN scope: this workflow only checks out the repo, runs the
+# build, and uploads artifacts. It does not create releases or push branches.
+permissions:
+  contents: read
+
 on:
   push:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      os:
+        description: "OS/arch to build (or 'all')"
+        type: choice
+        required: true
+        default: "all"
+        options:
+          - macos-arm64
+          - macos-x64
+          - windows-x64
+          - all
+      build_target:
+        description: "Tauri role to build (server, client, or both)"
+        type: choice
+        required: true
+        default: "all"
+        options:
+          - server
+          - client
+          - all
 
 jobs:
   build:
@@ -14,47 +39,67 @@ jobs:
         include:
           - os: macos-latest
             target: aarch64-apple-darwin
+            os_key: macos-arm64
             build_target: server
             artifact_prefix: macos-arm64-server
           - os: macos-latest
             target: aarch64-apple-darwin
+            os_key: macos-arm64
             build_target: client
             artifact_prefix: macos-arm64-client
           - os: macos-latest
             target: x86_64-apple-darwin
+            os_key: macos-x64
             build_target: server
             artifact_prefix: macos-x64-server
           - os: macos-latest
             target: x86_64-apple-darwin
+            os_key: macos-x64
             build_target: client
             artifact_prefix: macos-x64-client
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            os_key: windows-x64
             build_target: server
             artifact_prefix: windows-x64-server
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            os_key: windows-x64
             build_target: client
             artifact_prefix: windows-x64-client
     runs-on: ${{ matrix.os }}
+    # Manual dispatch can scope the matrix by os_key and build_target.
+    # When `inputs.os == 'all'` we skip this filter; likewise for build_target.
+    # This is the simpler of the two approaches (a job-level `if:` skip) —
+    # the alternative was to rebuild the matrix at runtime, which is harder
+    # to read and requires ugly expression gymnastics.
+    if: |
+      (github.event_name != 'workflow_dispatch' || inputs.os == 'all' || inputs.os == matrix.os_key) &&
+      (github.event_name != 'workflow_dispatch' || inputs.build_target == 'all' || inputs.build_target == matrix.build_target)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             ~/.cargo/registry
             src-tauri/target
-          key: cargo-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml') }}
+          # Cache key includes both Cargo.toml AND Cargo.lock so a dependency
+          # bump invalidates the cache. JS sources are intentionally excluded
+          # because they are not in the cargo target dir -- the
+          # `actions/setup-node` `cache: 'npm'` step handles `~/.npm` for npm.
+          key: cargo-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml', 'src-tauri/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ matrix.target }}-
 
       - run: npm ci
       - run: npm test
@@ -65,7 +110,7 @@ jobs:
             npm run tauri -- build --target ${{ matrix.target }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: ${{ matrix.artifact_prefix }}
           path: |
