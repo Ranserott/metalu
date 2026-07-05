@@ -28,10 +28,20 @@ pub fn load_config() -> ClientConfig {
     if !p.exists() {
         return ClientConfig::default();
     }
-    fs::read_to_string(&p)
-        .ok()
-        .and_then(|s| toml::from_str(&s).ok())
-        .unwrap_or_default()
+    match fs::read_to_string(&p) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => ClientConfig::default(),
+        Err(e) => {
+            log::warn!("failed to read client config {:?}: {}", p, e);
+            ClientConfig::default()
+        }
+        Ok(s) => match toml::from_str(&s) {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                log::warn!("failed to parse client config {:?}: {}", p, e);
+                ClientConfig::default()
+            }
+        },
+    }
 }
 
 pub fn save_config(cfg: &ClientConfig) -> Result<(), String> {
@@ -59,7 +69,7 @@ pub fn discover_server(timeout: Duration) -> Result<Option<DiscoveredServer>, St
         .map_err(|e| e.to_string())?;
     let deadline = Instant::now() + timeout;
     let mut buf = [0u8; 1024];
-    while Instant::now() < deadline {
+    while std::time::Instant::now() < deadline {
         match client.recv_from(&mut buf) {
             Ok((n, _peer)) => {
                 if let Ok(s) = std::str::from_utf8(&buf[..n]) {
@@ -68,8 +78,15 @@ pub fn discover_server(timeout: Duration) -> Result<Option<DiscoveredServer>, St
                     }
                 }
             }
-            Err(_) => continue,
+            Err(_) => {}
         }
+        // Sleep the remaining time before the deadline (or 100ms, whichever is smaller)
+        let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+        let sleep_for = remaining.min(Duration::from_millis(100));
+        if sleep_for.is_zero() {
+            break;
+        }
+        std::thread::sleep(sleep_for);
     }
     Ok(None)
 }

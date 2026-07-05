@@ -47,7 +47,18 @@ pub fn get_client_config() -> ClientConfig {
 
 #[tauri::command]
 pub fn set_client_config(config: ClientConfig) -> Result<(), String> {
+    if let Some(ref url) = config.server_url {
+        if !validate_server_url(url) {
+            return Err(format!("invalid server URL: {}", url));
+        }
+    }
     save_config(&config)
+}
+
+fn validate_server_url(s: &str) -> bool {
+    (s.starts_with("http://") || s.starts_with("https://"))
+        && s.len() > 8
+        && !s.chars().any(char::is_whitespace)
 }
 
 #[tauri::command]

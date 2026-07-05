@@ -8,16 +8,13 @@
 
 use std::path::PathBuf;
 
-/// Returns the platform-specific application data directory for Metalu.
+/// Returns the application data directory for Metalu.
 ///
 /// Resolution order:
-///   1. `METALU_DATA_DIR` env var, if set (used by tests to redirect I/O
-///      to a tempdir, and by ops for portable installs).
-///   2. `<OS data dir>/Metalu` (via `HOME`/`APPDATA`/`XDG_DATA_HOME`).
+/// 1. If `METALU_DATA_DIR` is set, return that path verbatim (used by tests).
+/// 2. Otherwise, return `<OS data dir>/Metalu`.
 ///
-/// Panics on the platform-default branch if the relevant env var is unset —
-/// which would be a genuinely broken host environment rather than a
-/// recoverable runtime error.
+/// Panics if neither the env var nor the platform-specific base dir is set.
 pub fn metalu_data_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("METALU_DATA_DIR") {
         return PathBuf::from(dir);
