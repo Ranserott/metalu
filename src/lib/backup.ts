@@ -80,6 +80,13 @@ export async function exportPgliteBackup(outPath: string): Promise<string> {
  *
  * Caller is responsible for snapshotting/confirming before invoking — this
  * destroys the live database on success.
+ *
+ * IMPORTANT: This function disposes the existing PGlite singleton and re-opens
+ * the data dir from disk. Any code that holds a reference to the prior PGlite
+ * instance (e.g. an open transaction, an awaited query) will see that handle
+ * disposed and fail. Callers must ensure no concurrent reads/writes are in flight.
+ * This function is intended to be called from a single-threaded request handler
+ * context (e.g. a Next.js route handler).
  */
 export async function importPgliteBackup(inPath: string): Promise<void> {
   const abs = path.resolve(inPath);
@@ -87,11 +94,20 @@ export async function importPgliteBackup(inPath: string): Promise<void> {
     throw new Error(`Backup file not found: ${abs}`);
   }
 
-  // Reject paths that escape the backup directory or data dir
-  const backupRoot = backupDir();
-  const normalizedBackup = path.resolve(backupRoot);
+  // Reject paths that escape the backup directory or data dir. We compute the
+  // backup dir without mkdirSync side effects so a rejected request doesn't
+  // create the directory.
+  const backupRoot = process.env.METALU_BACKUP_DIR
+    ? path.resolve(process.env.METALU_BACKUP_DIR)
+    : path.resolve(resolveDataDir(), "backups");
+  const normalizedBackup = backupRoot;
   const normalizedData = path.resolve(resolveDataDir());
-  if (!abs.startsWith(normalizedBackup + path.sep) && !abs.startsWith(normalizedData + path.sep)) {
+  if (
+    abs !== normalizedBackup &&
+    abs !== normalizedData &&
+    !abs.startsWith(normalizedBackup + path.sep) &&
+    !abs.startsWith(normalizedData + path.sep)
+  ) {
     throw new Error(`Backup file must be inside ${normalizedBackup} or ${normalizedData}`);
   }
 

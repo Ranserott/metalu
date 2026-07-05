@@ -28,8 +28,7 @@ export async function POST(_req: NextRequest) {
   }
 
   try {
-    const url = new URL(_req.url);
-    const fileName = url.searchParams.get("name") ?? defaultBackupName();
+    const fileName = _req.nextUrl.searchParams.get("name") ?? defaultBackupName();
     const outPath = path.join(backupDir(), fileName);
     const written = await exportPgliteBackup(outPath);
     return NextResponse.json({
@@ -74,7 +73,10 @@ export async function PUT(req: NextRequest) {
   // path traversal allowed.
   const dir = backupDir();
   const resolved = path.resolve(dir, requested);
-  if (!resolved.startsWith(path.resolve(dir) + path.sep)) {
+  if (
+    resolved !== path.resolve(dir) &&
+    !resolved.startsWith(path.resolve(dir) + path.sep)
+  ) {
     return NextResponse.json(
       { error: "Invalid file path" },
       { status: 400 },
