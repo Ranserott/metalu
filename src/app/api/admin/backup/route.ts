@@ -28,7 +28,8 @@ export async function POST(_req: NextRequest) {
   }
 
   try {
-    const fileName = defaultBackupName();
+    const url = new URL(_req.url);
+    const fileName = url.searchParams.get("name") ?? defaultBackupName();
     const outPath = path.join(backupDir(), fileName);
     const written = await exportPgliteBackup(outPath);
     return NextResponse.json({
@@ -82,7 +83,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     await importPgliteBackup(resolved);
-    return NextResponse.json({ ok: true, file: resolved });
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[api/admin/backup PUT] import failed:", err);
     return NextResponse.json(

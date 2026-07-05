@@ -26,7 +26,11 @@ export function BackupPanel() {
   // `window.__TAURI_INTERNALS__` which is undefined on the server, and the
   // function returns false there. The initial paint in the browser will be
   // correct on hydration.
-  const isTauri = isTauriRuntime();
+  const [enabled, setEnabled] = React.useState(false);
+  React.useEffect(() => {
+    setEnabled(isTauriRuntime());
+  }, []);
+  const isTauri = enabled;
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [lastBackupPath, setLastBackupPath] = React.useState<string | null>(null);

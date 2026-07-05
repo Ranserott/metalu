@@ -87,6 +87,14 @@ export async function importPgliteBackup(inPath: string): Promise<void> {
     throw new Error(`Backup file not found: ${abs}`);
   }
 
+  // Reject paths that escape the backup directory or data dir
+  const backupRoot = backupDir();
+  const normalizedBackup = path.resolve(backupRoot);
+  const normalizedData = path.resolve(resolveDataDir());
+  if (!abs.startsWith(normalizedBackup + path.sep) && !abs.startsWith(normalizedData + path.sep)) {
+    throw new Error(`Backup file must be inside ${normalizedBackup} or ${normalizedData}`);
+  }
+
   // Validate the file extension so we don't silently accept the wrong format.
   const lower = abs.toLowerCase();
   const matches = [...BACKUP_EXTENSIONS].some((ext) => lower.endsWith(ext));
@@ -119,22 +127,3 @@ export async function importPgliteBackup(inPath: string): Promise<void> {
   await pg.query("SELECT 1");
 }
 
-/**
- * Convenience: produce a BackupSummary describing the given path (size + mtime).
- * Used by the admin panel to show the most recent backup file.
- */
-export type BackupSummary = {
-  path: string;
-  sizeBytes: number;
-  mtimeMs: number;
-};
-
-export function describeBackup(p: string): BackupSummary | null {
-  if (!fs.existsSync(p)) return null;
-  const st = fs.statSync(p);
-  return {
-    path: p,
-    sizeBytes: st.size,
-    mtimeMs: st.mtimeMs,
-  };
-}
