@@ -128,3 +128,28 @@ return new NextResponse(buffer, {
 - `docs/superpowers/specs/` — diseños de módulos (objetivo, modelo de datos, UX)
 - `docs/superpowers/plans/` — implementación paso a paso
 - `graphify-out/` — knowledge graph de la codebase (vía `/graphify`)
+
+## Desktop install (Windows + Mac, LAN topology)
+
+MetalFlow can be installed locally on a small workshop network (2–5 PCs). One PC runs as the server (DB + app); the rest connect over LAN as clients.
+
+### Install the server
+
+1. Download `Metalu-Server-<platform>.dmg` or `Metalu-Server-Setup.exe`.
+2. **macOS**: right-click the `.dmg` → "Open" (Gatekeeper warning is expected — no notarization in v1).
+3. Drag to `/Applications`. Launch "Metalu Server".
+4. Note the LAN IP printed in the top of the window — clients need this.
+
+### Install the client
+
+1. On each other PC, download `Metalu-Cliente-<platform>.dmg` or `Metalu-Cliente-Setup.exe`.
+2. Install the same way.
+3. Launch "Metalu Cliente". First-run modal appears: click "Buscar server" → the LAN server is auto-discovered.
+4. Log in with your credentials. Each PC has its own session.
+
+### Backup
+
+- Go to `/admin/backup` once logged in (admin role required).
+- Click "Hacer backup ahora" → creates `metalu-YYYY-MM-DD.pglitebackup` in the server's app-data folder.
+
+For deeper ops, see [docs/operations/INSTALL.md](docs/operations/INSTALL.md), [docs/operations/LAN-SETUP.md](docs/operations/LAN-SETUP.md), and [docs/operations/TROUBLESHOOTING.md](docs/operations/TROUBLESHOOTING.md).
