@@ -6,16 +6,17 @@ import path from "node:path";
 describe("pglite prisma adapter", () => {
   let tmpDir: string;
   let createTauriPrismaClient: typeof import("@/lib/prisma/pglite").createTauriPrismaClient;
-  let applyMigrations: typeof import("@/lib/prisma/pglite").applyMigrations;
+  let applyMigrations: typeof import("@/lib/prisma/migrations").applyMigrations;
   let dispose: () => Promise<void>;
 
   beforeAll(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "metalu-pglite-test-"));
     process.env.METALU_TEST_DATA_DIR = tmpDir;
-    const mod = await import("@/lib/prisma/pglite");
-    createTauriPrismaClient = mod.createTauriPrismaClient;
-    applyMigrations = mod.applyMigrations;
-    dispose = mod.disposeTauriPrisma;
+    const clientMod = await import("@/lib/prisma/pglite");
+    createTauriPrismaClient = clientMod.createTauriPrismaClient;
+    dispose = clientMod.disposeTauriPrisma;
+    const { applyMigrations: apply } = await import("@/lib/prisma/migrations");
+    applyMigrations = apply;
     // Replicate what Tauri's boot script (Task 5) will do: apply
     // every prisma/migrations/*/migration.sql before Prisma queries run.
     await applyMigrations();
