@@ -1,0 +1,75 @@
+name: build-desktop
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build_target: server
+            artifact_prefix: macos-arm64-server
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build_target: client
+            artifact_prefix: macos-arm64-client
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            build_target: server
+            artifact_prefix: macos-x64-server
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            build_target: client
+            artifact_prefix: macos-x64-client
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            build_target: server
+            artifact_prefix: windows-x64-server
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            build_target: client
+            artifact_prefix: windows-x64-client
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            src-tauri/target
+          key: cargo-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml') }}
+
+      - run: npm ci
+      - run: npm test
+      - name: Tauri build
+        run: |
+          cd src-tauri
+          METALU_BUILD_TARGET=${{ matrix.build_target }} \
+            npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_prefix }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
+            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+          if-no-files-found: warn
