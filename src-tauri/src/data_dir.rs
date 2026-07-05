@@ -3,16 +3,25 @@
 //! On Tauri startup this directory is used to:
 //!   - house the bundled Next.js standalone server resources,
 //!   - persist the local PGlite database (`<data dir>/metalu-db`),
+//!   - persist the client-mode config (`<data dir>/metalu-client.toml`),
 //!   - backup/restore blobs for the admin panel.
 
 use std::path::PathBuf;
 
-/// Returns `<OS data dir>/Metalu`.
+/// Returns the platform-specific application data directory for Metalu.
 ///
-/// Panics if the platform-specific env var (`HOME` on macOS/Linux, `APPDATA`
-/// on Windows, `XDG_DATA_HOME` on Linux) is not set — which would be a
-/// genuinely broken host environment rather than a recoverable runtime error.
+/// Resolution order:
+///   1. `METALU_DATA_DIR` env var, if set (used by tests to redirect I/O
+///      to a tempdir, and by ops for portable installs).
+///   2. `<OS data dir>/Metalu` (via `HOME`/`APPDATA`/`XDG_DATA_HOME`).
+///
+/// Panics on the platform-default branch if the relevant env var is unset —
+/// which would be a genuinely broken host environment rather than a
+/// recoverable runtime error.
 pub fn metalu_data_dir() -> PathBuf {
+    if let Some(dir) = std::env::var_os("METALU_DATA_DIR") {
+        return PathBuf::from(dir);
+    }
     let base = dirs_data_dir().expect("platform data dir env var not set");
     base.join("Metalu")
 }
