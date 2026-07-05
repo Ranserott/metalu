@@ -27,7 +27,7 @@ pub async fn spawn_next_server(
     cmd.arg(entry)
         .env("METALU_RUNTIME", "tauri")
         .env("PORT", port.to_string())
-        .env("HOSTNAME", "0.0.0.0")
+        .env("HOST", "0.0.0.0")
         .env("METALU_DATA_DIR", resolve_data_dir())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -65,7 +65,17 @@ pub async fn run_server_async() -> Result<(), String> {
     use crate::health::wait_for_healthy;
     use std::time::Duration;
 
-    let resources_dir = std::env::current_dir().unwrap_or_default();
+    // Resolve resources_dir: in a bundled build, CWD is the install dir
+    // (binary's parent), where Tauri copies `.next/standalone/`. In `tauri
+    // dev`, CWD is the project root, where standalone also lives under
+    // `apps/web/...` (depending on how the runner invokes us). Prefer the
+    // install dir if it already contains the standalone entry, otherwise
+    // fall back to CWD for dev.
+    let resources_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .filter(|p| standalone_entry(p).exists())
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
     let port: u16 = 3000;
     let _pid = spawn_next_server(&resources_dir, port).await?;
 
@@ -73,6 +83,9 @@ pub async fn run_server_async() -> Result<(), String> {
 
     // Bind UDP discovery on a dedicated OS thread. The handler uses a 500ms
     // recv timeout, so the thread is not CPU-bound.
+    // TODO(Task 7): graceful shutdown channel — currently the discovery thread
+    // runs forever. Acceptable for Task 5 stub; the admin panel / Task 7 will
+    // add a `tokio::sync::oneshot` shutdown signal.
     std::thread::spawn(move || loop {
         let Ok(sock) = bind_discovery_socket() else { continue };
         while let Ok(Some(_)) = crate::discovery::handle_one_request(&sock, port) {}

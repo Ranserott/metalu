@@ -5,8 +5,8 @@
 //! between two `UdpSocket`s.
 
 use metalu_lib::discovery::{
-    bind_discovery_socket, build_response, handle_one_request, parse_request, DISCOVERY_MAGIC,
-    DISCOVERY_PORT,
+    bind_discovery_socket, build_response, handle_one_request, parse_request, ServerInfo,
+    DISCOVERY_MAGIC, DISCOVERY_PORT,
 };
 use std::net::UdpSocket;
 use std::time::Duration;
@@ -50,6 +50,6 @@ fn full_round_trip() {
 
     let mut buf = [0u8; 1024];
     let (n, _) = client.recv_from(&mut buf).expect("client recv");
-    let body = std::str::from_utf8(&buf[..n]).unwrap();
-    assert!(body.contains("\"port\":3000"), "got: {}", body);
+    let info: ServerInfo = serde_json::from_slice(&buf[..n]).expect("parse json");
+    assert_eq!(info.port, server_port);
 }
