@@ -152,4 +152,4 @@ MetalFlow can be installed locally on a small workshop network (2–5 PCs). One 
 - Go to `/admin/backup` once logged in (admin role required).
 - Click "Hacer backup ahora" → creates `metalu-YYYY-MM-DD.pglitebackup` in the server's app-data folder.
 
-For deeper ops, see [docs/operations/INSTALL.md](docs/operations/INSTALL.md), [docs/operations/LAN-SETUP.md](docs/operations/LAN-SETUP.md), and [docs/operations/TROUBLESHOOTING.md](docs/operations/TROUBLESHOOTING.md).
+For deeper ops, see [docs/operations/INSTALL.md](docs/operations/INSTALL.md), [docs/operations/LAN-SETUP.md](docs/operations/LAN-SETUP.md), [docs/operations/TROUBLESHOOTING.md](docs/operations/TROUBLESHOOTING.md), and [docs/operations/CLIENT-UPDATE.md](docs/operations/CLIENT-UPDATE.md).
