@@ -167,7 +167,9 @@ export function WorkOrderTable({
                   statusColors[wo.status] || ""
                 } focus:ring-1 focus:ring-[var(--theme-primary)]`}
               >
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => statusLabels[value] ?? value}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((opt) => (
