@@ -1,11 +1,13 @@
-export type User = {
+import { Role } from "@/modules/roles/types/role";
+
+export interface User {
   id: string;
   email: string;
   name: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
   createdById: string | null;
-  roles: { role: { id: string; name: string } }[];
-  createdBy: { id: string; name: string } | null;
-};
+  roles: Role[];
+}

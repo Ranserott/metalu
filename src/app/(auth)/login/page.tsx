@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/button";
@@ -22,13 +22,6 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [isLoading, setIsLoading] = useState(false);
-  const [csrfToken, setCsrfToken] = useState<string>("");
-
-  useEffect(() => {
-    fetch("/api/auth/csrf")
-      .then((res) => res.json())
-      .then((data) => setCsrfToken(data.csrfToken));
-  }, []);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
@@ -57,7 +50,7 @@ export default function LoginPage() {
       <Card className="w-[400px] border-[#004C63]">
         <CardHeader className="space-y-4 pb-4">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-[#004C63]">Metalurgica</h1>
+            <h1 className="text-3xl font-bold text-[#004C63]">MetalFlow</h1>
             <p className="text-sm text-gray-500">Sistema de gestión industrial</p>
           </div>
         </CardHeader>

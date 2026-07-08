@@ -39,7 +39,7 @@ async function main() {
   });
 
   console.log("✅ Seed completed");
-  console.log("Admin user: admin@metalflow.com / admin123");
+  console.log("Admin user: admin / admin123");
 }
 
 main()

@@ -4,7 +4,7 @@ type Permission = {
 };
 
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  Admin: [
+  admin: [
     { resource: "*", actions: ["create", "read", "update", "delete"] },
   ],
   Manager: [
@@ -68,10 +68,16 @@ export function canAccess(role: string, resource: string, action: string): boole
   return specific?.actions.includes(action as any) ?? false;
 }
 
-/**
- * Checks if the given roles array includes "Admin".
- * Pass `session.user.roles` (string[]) from the NextAuth session.
- */
-export function isAdmin(roles: string[] | undefined | null): boolean {
-  return Array.isArray(roles) && roles.includes("Admin");
+export function isAdmin(roles: string[]): boolean {
+  return roles.includes("admin");
+}
+
+export function hasAccess(roles: string[], resource: string): boolean {
+  // admin has access to everything
+  if (roles.includes("admin")) return true;
+
+  // For now, trabajadores only have access to dashboard
+  if (roles.includes("trabajador") && resource === "dashboard") return true;
+
+  return false;
 }

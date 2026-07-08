@@ -1,52 +1,84 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { getUserById, updateUser, deleteUser, updateUserRoles } from "@/modules/users/services/userService";
-import { UserSchema } from "@/modules/users/validations/userSchemas";
+import { getUserById, updateUser, deleteUser, canDeleteUser } from "@/modules/users/services/userService";
+import { UpdateUserSchema } from "@/modules/users/validations/userSchemas";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { id } = await params;
-  const user = await getUserById(id);
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  return NextResponse.json(user);
-}
-
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { id } = await params;
-  const body = await req.json();
-  const parsed = UserSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-  }
-
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    await updateUser(id, parsed.data);
-    if (body.roleIds) {
-      await updateUserRoles(id, body.roleIds);
+    const session = await auth();
+    if (!session?.user || !session.user.roles.includes("admin")) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
-    const updated = await getUserById(id);
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const { id } = await params;
+    const user = await getUserById(id);
+    if (!user) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.roles.includes("admin")) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
 
-  const { id } = await params;
+    const { id } = await params;
+    const body = await request.json();
+    const validated = UpdateUserSchema.parse(body);
 
-  if (id === session.user.id) {
-    return NextResponse.json({ error: "No puedes eliminarte a ti mismo" }, { status: 400 });
+    const user = await updateUser(id, validated);
+    return NextResponse.json({ user });
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+    if (error.code === "P2002") {
+      return NextResponse.json({ error: "El email ya existe" }, { status: 400 });
+    }
+    console.error("Error updating user:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
+}
 
-  await deleteUser(id);
-  return NextResponse.json({ success: true });
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.roles.includes("admin")) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    if (id === session.user.id) {
+      return NextResponse.json({ error: "No puedes eliminarte a ti mismo" }, { status: 400 });
+    }
+
+    const { can, reason } = await canDeleteUser(id);
+    if (!can) {
+      return NextResponse.json({ error: reason }, { status: 400 });
+    }
+
+    await deleteUser(id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
 }

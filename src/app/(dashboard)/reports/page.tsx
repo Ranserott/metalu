@@ -1,19 +1,12 @@
-import { getReports } from "@/modules/reports/services/reportService";
-import { ReportTable } from "@/modules/reports/components/ReportTable";
+import { prisma } from "@/lib/prisma/prisma";
+import { ReportsView } from "@/modules/reports/components/ReportsView";
 
 export default async function ReportsPage() {
-  const reports = await getReports();
+  const clients = await prisma.client.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Reportes</h1>
-          <p className="text-sm text-gray-500">Modulo de reportes</p>
-        </div>
-      </div>
-
-      <ReportTable data={reports} />
-    </div>
-  );
+  return <ReportsView clients={clients} />;
 }

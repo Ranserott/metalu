@@ -2,14 +2,16 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma/prisma";
+import { authConfigEdge } from "./auth.config.edge";
 
 export const authConfig = {
+  ...authConfigEdge,
   providers: [
     Credentials({
       name: "credentials",
       credentials: {
         username: { label: "Usuario", type: "text" },
- password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
@@ -24,7 +26,10 @@ export const authConfig = {
           include: { roles: { include: { role: true } } },
         });
 
-        console.log("[AUTH] User found:", user ? { id: user.id, name: user.name, isActive: user.isActive } : null);
+        console.log(
+          "[AUTH] User found:",
+          user ? { id: user.id, name: user.name, isActive: user.isActive } : null
+        );
 
         if (!user || !user.isActive) {
           console.log("[AUTH] User not found or inactive");
@@ -52,6 +57,7 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    ...authConfigEdge.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -59,19 +65,5 @@ export const authConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.roles = token.roles as string[];
-      }
-      return session;
-    },
   },
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
 };
