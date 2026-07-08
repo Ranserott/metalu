@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pivotDailySummary } from "@/modules/suppliers-reports/services/supplierReportService";
+import { pivotDailySummary } from "@/modules/suppliers-reports/services/pivot";
 
 describe("pivotDailySummary", () => {
   it("groups by day and pivots by estado", () => {
