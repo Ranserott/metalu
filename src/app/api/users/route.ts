@@ -6,7 +6,7 @@ import { CreateUserSchema } from "@/modules/users/validations/userSchemas";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !session.user.roles.includes("Admin")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !session.user.roles.includes("Admin")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 

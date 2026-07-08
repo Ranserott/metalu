@@ -26,7 +26,7 @@ export const authConfigEdge = {
 
       if (pathname.startsWith("/users")) {
         const roles = (auth.user as { roles?: string[] }).roles ?? [];
-        if (!roles.includes("admin")) {
+        if (!roles.includes("Admin")) {
           return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
         }
       }

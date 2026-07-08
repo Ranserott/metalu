@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !session.user.roles.includes("Admin")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
