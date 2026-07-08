@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Trash, Printer, Save, FileText, LogOut, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientModal } from "@/modules/quotations/components/ClientModal";
 import { QuotationModal } from "@/modules/quotations/components/QuotationModal";
@@ -61,13 +62,6 @@ const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" 
 const LOCALES = [
   "CASA MATRIZ",
   "SUCURSAL 1",
-];
-
-const CONDICIONES_PAGO = [
-  "30 DÍAS CRÉDITO",
-  "CONTADO",
-  "50% ANTICIPO - 50% CONTRA ENTREGA",
-  "15 DÍAS",
 ];
 
 export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, onCancel }: WorkOrderFormProps) {
@@ -473,18 +467,11 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
               <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
                 Condiciones Pago
               </label>
-              <Select value={condicionesPago} onValueChange={(v) => v && setCondicionesPago(v)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONDICIONES_PAGO.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={condicionesPago}
+                onChange={(e) => setCondicionesPago(e.target.value)}
+                placeholder="Ej: 30 DÍAS CRÉDITO"
+              />
             </div>
           </div>
         </div>
