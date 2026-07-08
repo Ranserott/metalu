@@ -42,9 +42,12 @@ export const columns: ColumnDef<User>[] = [
     id: "actions",
     cell: ({ row }) => (
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link href={`/users/${row.original.id}/edit`}>Editar</Link>
-        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          nativeButton={false}
+          render={<Link href={`/users/${row.original.id}/edit`}>Editar</Link>}
+        />
       </div>
     ),
   },
