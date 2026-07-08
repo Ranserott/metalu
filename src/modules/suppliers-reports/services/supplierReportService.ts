@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma/prisma";
 import type {
   SupplierDocByDueDateRow,
   SupplierDocByDueDateTotals,
+  SupplierDocBySupplierRow,
+  SupplierDocBySupplierTotals,
 } from "../types/report";
 
 export type SupplierReportFilters = {
@@ -49,4 +51,31 @@ export async function getDocumentsByDueDate(
 
   const total = rows.reduce((acc, r) => acc + r.valor, 0);
   return { rows, totals: { total } };
+}
+
+export async function getDocumentsBySupplier(
+  filters: SupplierReportFilters
+): Promise<{ rows: SupplierDocBySupplierRow[]; totals: SupplierDocBySupplierTotals }> {
+  const where = { ...buildWhere(filters, "fechaVencimiento"), estado: "PENDIENTE" as const };
+
+  const docs = await prisma.supplierDocument.findMany({
+    where,
+    include: { supplier: { select: { id: true, code: true, name: true } } },
+    orderBy: [{ supplier: { name: "asc" } }, { fechaVencimiento: "asc" }],
+  });
+
+  const rows: SupplierDocBySupplierRow[] = docs.map((d) => ({
+    id: d.id,
+    supplierId: d.supplierId,
+    fechaVencimiento: d.fechaVencimiento,
+    supplierCode: d.supplier.code,
+    supplierName: d.supplier.name,
+    tipoDocumento: d.tipoDocumento,
+    nombre: d.nombre,
+    documento: d.documento,
+    valor: toNumber(d.valor),
+  }));
+
+  const total = rows.reduce((acc, r) => acc + r.valor, 0);
+  return { rows, totals: { total, count: rows.length } };
 }
