@@ -8,7 +8,10 @@ import { Supplier } from "../types/supplier";
 import {
   SupplierDocument,
   SUPPLIER_DOCUMENT_TYPE_LABELS,
+  SUPPLIER_DOCUMENT_STATUS_LABELS,
+  SUPPLIER_DOCUMENT_STATUS_COLORS,
 } from "../types/supplierDocument";
+import { Badge } from "@/components/ui/badge";
 import { SupplierDocumentFormModal } from "./SupplierDocumentFormModal";
 
 type Props = {
@@ -188,7 +191,11 @@ export function SupplierDetailView({ supplier }: Props) {
                       }).format(Number(doc.valor))}
                     </td>
                     <td className="p-2 text-gray-700">{formatDate(doc.fechaVencimiento)}</td>
-                    <td className="p-2">{doc.estado}</td>
+                    <td className="p-2">
+                      <Badge className={SUPPLIER_DOCUMENT_STATUS_COLORS[doc.estado]}>
+                        {SUPPLIER_DOCUMENT_STATUS_LABELS[doc.estado]}
+                      </Badge>
+                    </td>
                     <td className="p-2">
                       <button
                         onClick={() => handleDelete(doc.id)}

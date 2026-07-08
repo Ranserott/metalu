@@ -303,17 +303,23 @@ enum SupplierDocumentType {
   CHEQUE
 }
 
+enum SupplierDocumentStatus {
+  PAGADO
+  PENDIENTE
+  CANCELADO
+}
+
 model SupplierDocument {
-  id               String               @id @default(uuid())
-  supplierId       String               @map("supplier_id")
+  id               String                 @id @default(uuid())
+  supplierId       String                 @map("supplier_id")
   nombre           String
-  tipoDocumento    SupplierDocumentType @map("tipo_documento")
+  tipoDocumento    SupplierDocumentType   @map("tipo_documento")
   documento        String
-  fechaDocumento   DateTime             @map("fecha_documento")
-  valor            Decimal              @db.Decimal(12, 2)
-  fechaVencimiento DateTime             @map("fecha_vencimiento")
-  estado           String
-  createdAt        DateTime             @default(now()) @map("created_at")
+  fechaDocumento   DateTime               @map("fecha_documento")
+  valor            Decimal                @db.Decimal(12, 2)
+  fechaVencimiento DateTime               @map("fecha_vencimiento")
+  estado           SupplierDocumentStatus @default(PENDIENTE)
+  createdAt        DateTime               @default(now()) @map("created_at")
   updatedAt        DateTime             @updatedAt @map("updated_at")
   deletedAt        DateTime?            @map("deleted_at")
   createdById      String?              @map("created_by_id")

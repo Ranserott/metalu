@@ -20,6 +20,8 @@ import { SupplierDocumentInput } from "../validations/supplierDocumentSchemas";
 import {
   SUPPLIER_DOCUMENT_TYPE_LABELS,
   SUPPLIER_DOCUMENT_TYPE_OPTIONS,
+  SUPPLIER_DOCUMENT_STATUS_LABELS,
+  SUPPLIER_DOCUMENT_STATUS_OPTIONS,
 } from "../types/supplierDocument";
 
 type Props = {
@@ -163,12 +165,29 @@ export function SupplierDocumentFormModal({ supplierId, open, onOpenChange, onSa
             <label className="text-[11px] font-semibold uppercase text-gray-600 mb-1 block tracking-wide">
               Estado
             </label>
-            <Input
-              required
+            <Select
               value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value })}
-              placeholder="Ej: Pagado, Pendiente, etc."
-            />
+              onValueChange={(v) =>
+                v && setForm({ ...form, estado: v as SupplierDocumentInput["estado"] })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar estado">
+                  {(value: string | null) =>
+                    value
+                      ? (SUPPLIER_DOCUMENT_STATUS_LABELS[value as keyof typeof SUPPLIER_DOCUMENT_STATUS_LABELS] ?? value)
+                      : "Seleccionar estado"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPLIER_DOCUMENT_STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {SUPPLIER_DOCUMENT_STATUS_LABELS[opt]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

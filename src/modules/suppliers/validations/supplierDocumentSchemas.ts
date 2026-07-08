@@ -9,7 +9,9 @@ export const SupplierDocumentSchema = z.object({
   fechaDocumento: z.coerce.date({ message: "Fecha de documento inválida" }),
   valor: z.number().positive("El valor debe ser mayor a 0"),
   fechaVencimiento: z.coerce.date({ message: "Fecha de vencimiento inválida" }),
-  estado: z.string().min(1, "Estado requerido"),
+  estado: z.enum(["PAGADO", "PENDIENTE", "CANCELADO"], {
+    message: "Estado requerido",
+  }),
 });
 
 export type SupplierDocumentInput = z.infer<typeof SupplierDocumentSchema>;
