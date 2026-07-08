@@ -33,7 +33,6 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       username: data.username,
       password: data.password,
-      csrfToken,
       redirect: false,
     });
     setIsLoading(false);
