@@ -234,6 +234,10 @@ export function QuotationView({ quotation }: Props) {
             <span className="font-medium">-{clp.format(discount)}</span>
           </div>
         )}
+        <div className="flex justify-between text-sm border-t pt-2">
+          <span className="text-gray-600">Subtotal Afecto:</span>
+          <span className="font-medium">{clp.format(Math.max(0, subtotal - discount))}</span>
+        </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">IVA (19%):</span>
           <span>{clp.format(tax)}</span>

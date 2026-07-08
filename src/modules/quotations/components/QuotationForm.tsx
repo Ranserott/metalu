@@ -528,6 +528,10 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
               <span className="font-semibold">-{clp.format(discountValue)}</span>
             </div>
           )}
+          <div className="flex justify-between text-sm border-t pt-2.5">
+            <span className="text-gray-600 font-medium">Subtotal Afecto:</span>
+            <span className="font-semibold text-gray-800">{clp.format(taxable)}</span>
+          </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">IVA (19%):</span>
             <span className="font-semibold text-gray-800">{clp.format(tax)}</span>
