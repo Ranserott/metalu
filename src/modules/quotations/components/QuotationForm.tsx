@@ -44,6 +44,12 @@ type Props = {
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
+const discountTypeLabels: Record<string, string> = {
+  NONE: "Sin descuento",
+  AMOUNT: "Monto ($)",
+  PERCENT: "Porcentaje (%)",
+};
+
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-800 border-gray-200",
   SENT: "bg-blue-100 text-blue-800 border-blue-200",
@@ -498,7 +504,9 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger className="h-9 w-40 border-gray-300">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value: string) => discountTypeLabels[value] ?? value}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NONE">Sin descuento</SelectItem>
