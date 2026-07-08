@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { Supplier } from "../types/supplier";
 import { DataTable } from "@/components/tables/DataTable";
@@ -15,7 +16,6 @@ import { SUPPLIER_TABLE_FILTERS } from "../constants/tableFilters";
 type Props = {
   data: Supplier[];
   onEdit: (supplier: Supplier) => void;
-  onView: (supplier: Supplier) => void;
   onDeleteSuccess: () => void;
 };
 
@@ -43,7 +43,8 @@ const supplierGlobalFilter: FilterFn<Supplier> = (row, _columnId, filterValue: s
   return haystack.includes(q);
 };
 
-export function SupplierTable({ data, onEdit, onView, onDeleteSuccess }: Props) {
+export function SupplierTable({ data, onEdit, onDeleteSuccess }: Props) {
+  const router = useRouter();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -128,7 +129,7 @@ export function SupplierTable({ data, onEdit, onView, onDeleteSuccess }: Props) 
             size="sm"
             variant="outline"
             className="border-gray-400 text-gray-600 hover:bg-gray-50"
-            onClick={() => onView(row.original)}
+            onClick={() => router.push(`/suppliers/${row.original.id}`)}
             title="Ver detalles y documentos"
           >
             <Eye className="w-4 h-4" />
