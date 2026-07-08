@@ -1,8 +1,16 @@
 # Reports Module Design
 
 Date: 2026-07-08
-Status: Approved
+Status: Shipped (commits e9e3357, c70152c, 01bb3c0)
 Branch: worktree-feature+users-roles-module
+
+## Schema corrections discovered during implementation
+
+The original spec referenced `Invoice.saldo`, `Invoice.abonos`, and an Invoice "Motivo" field — **none of these exist in the schema**. Implementation diverged from spec as follows:
+
+- **Saldo is computed**, not stored. `saldo = Invoice.total − Σ Payment.amount WHERE status='PAGADO'`
+- **Notas Crédito `Motivo` column dropped** — no field for it; only `number`, `clientName`, `total`, `issueDate`
+- **Cartola `Detalle` column** is built from `Invoice.number + workOrderId` for invoices, and `Payment.reference || 'Pago ' + method` for payments
 
 ## Goal
 
