@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SupplierAccordion } from "@/modules/suppliers/components/SupplierAccordion";
 import { SupplierTable } from "@/modules/suppliers/components/SupplierTable";
+import { SupplierDocumentsModal } from "@/modules/suppliers/components/SupplierDocumentsModal";
 import { SupplierInput } from "@/modules/suppliers/validations/supplierSchemas";
 import { Supplier } from "@/modules/suppliers/types/supplier";
 
@@ -11,6 +12,7 @@ console.log(">>> SuppliersPage rendering");
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editData, setEditData] = useState<SupplierInput & { id: string } | undefined>();
+  const [viewSupplier, setViewSupplier] = useState<Supplier | null>(null);
 
   const fetchSuppliers = useCallback(async () => {
     const res = await fetch("/api/suppliers");
@@ -56,9 +58,18 @@ export default function SuppliersPage() {
         <SupplierTable
           data={suppliers}
           onEdit={handleEdit}
+          onView={setViewSupplier}
           onDeleteSuccess={fetchSuppliers}
         />
       </div>
+
+      <SupplierDocumentsModal
+        supplier={viewSupplier}
+        open={!!viewSupplier}
+        onOpenChange={(open) => {
+          if (!open) setViewSupplier(null);
+        }}
+      />
     </div>
   );
 }

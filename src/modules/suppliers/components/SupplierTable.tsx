@@ -7,7 +7,7 @@ import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Eye } from "lucide-react";
 import { DeleteSupplierModal } from "./DeleteSupplierModal";
 import { SUPPLIER_SEARCHABLE_KEYS } from "../constants/searchableKeys";
 import { SUPPLIER_TABLE_FILTERS } from "../constants/tableFilters";
@@ -15,6 +15,7 @@ import { SUPPLIER_TABLE_FILTERS } from "../constants/tableFilters";
 type Props = {
   data: Supplier[];
   onEdit: (supplier: Supplier) => void;
+  onView: (supplier: Supplier) => void;
   onDeleteSuccess: () => void;
 };
 
@@ -42,7 +43,7 @@ const supplierGlobalFilter: FilterFn<Supplier> = (row, _columnId, filterValue: s
   return haystack.includes(q);
 };
 
-export function SupplierTable({ data, onEdit, onDeleteSuccess }: Props) {
+export function SupplierTable({ data, onEdit, onView, onDeleteSuccess }: Props) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -126,8 +127,18 @@ export function SupplierTable({ data, onEdit, onDeleteSuccess }: Props) {
           <Button
             size="sm"
             variant="outline"
+            className="border-gray-400 text-gray-600 hover:bg-gray-50"
+            onClick={() => onView(row.original)}
+            title="Ver detalles y documentos"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             className="border-blue-500 text-blue-500 hover:bg-blue-50"
             onClick={() => onEdit(row.original)}
+            title="Editar"
           >
             <Pencil className="w-4 h-4" />
           </Button>
@@ -138,6 +149,7 @@ export function SupplierTable({ data, onEdit, onDeleteSuccess }: Props) {
               setSelectedSupplier(row.original);
               setDeleteModalOpen(true);
             }}
+            title="Eliminar"
           >
             <Trash2 className="w-4 h-4 text-red-500" />
           </Button>
