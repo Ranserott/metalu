@@ -2,10 +2,6 @@ import { prisma } from "@/lib/prisma/prisma";
 import type {
   SupplierDocByDueDateRow,
   SupplierDocByDueDateTotals,
-  SupplierDocBySupplierRow,
-  SupplierDocBySupplierTotals,
-  DailySummaryRow,
-  DailySummaryTotals,
 } from "../types/report";
 
 export type SupplierReportFilters = {

@@ -5,6 +5,9 @@ import { getDocumentsByDueDate } from "@/modules/suppliers-reports/services/supp
 let supplierId: string;
 
 beforeAll(async () => {
+  // Clean up any leftover data from a previous run (cascade-deletes its documents)
+  await prisma.supplier.deleteMany({ where: { code: "TEST-SUP-DUE" } });
+
   const supplier = await prisma.supplier.create({
     data: {
       code: "TEST-SUP-DUE",
@@ -13,11 +16,6 @@ beforeAll(async () => {
     },
   });
   supplierId = supplier.id;
-
-  // Soft-delete any leftover docs from previous runs to keep test isolated
-  await prisma.supplierDocument.deleteMany({
-    where: { supplier: { code: "TEST-SUP-DUE" } },
-  });
 
   const today = new Date("2026-07-08T12:00:00Z");
   const future = new Date("2026-07-15T12:00:00Z");
@@ -66,8 +64,6 @@ describe("getDocumentsByDueDate", () => {
     const { rows } = await getDocumentsByDueDate({});
     const paid = rows.find((r) => r.documento === "F-200");
     expect(paid).toBeUndefined();
-    // cleanup
-    await prisma.supplierDocument.deleteMany({ where: { supplierId, documento: "F-200" } });
   });
 
   it("filters by fechaVencimiento range", async () => {
