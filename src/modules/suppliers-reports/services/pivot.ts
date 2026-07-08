@@ -26,8 +26,8 @@ export function pivotDailySummary(
     let row = byDay.get(key);
     if (!row) {
       row = {
-        // Noon UTC keeps the displayed date correct in any local timezone
-        // west of UTC-12 (e.g. Chile UTC-4 would otherwise shift to the prior day).
+        // Noon UTC renders as local morning in Chile (UTC-4) and stays on
+        // the intended date — midnight UTC would shift to the prior day.
         fecha: new Date(`${key}T12:00:00.000Z`),
         pendiente: emptyBreakdown(),
         pagado: emptyBreakdown(),
