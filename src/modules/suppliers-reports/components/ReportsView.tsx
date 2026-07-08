@@ -71,6 +71,10 @@ export function ReportsView({ suppliers }: Props) {
   function handleTabChange(next: string) {
     setActiveTab(next as SupplierReportType);
     setError(null);
+    // Clear stale rows/totals so a tab never renders with the previous tab's shape
+    // (e.g. daily-summary totals would otherwise keep by-due-date's {total} and crash on .pendiente.total).
+    setRows([]);
+    setTotals(undefined);
   }
 
   return (
