@@ -48,6 +48,7 @@ const quotationGlobalFilter: FilterFn<Quotation> = (row, _columnId, filterValue:
       normalize(row.original[k as keyof Quotation] as unknown as string)
     ),
     normalize(row.original.client?.name),
+    normalize(row.original.createdBy?.name),
   ].join(" ");
   return haystack.includes(q);
 };
@@ -78,6 +79,11 @@ export function QuotationTable({ data, onEdit, onView, onDeleteSuccess }: Props)
       id: "client",
       header: "CLIENTE",
       cell: ({ row }) => row.original.client?.name ?? "—",
+    },
+    {
+      id: "createdBy",
+      header: "CREADO POR",
+      cell: ({ row }) => row.original.createdBy?.name ?? "—",
     },
     {
       accessorKey: "status",

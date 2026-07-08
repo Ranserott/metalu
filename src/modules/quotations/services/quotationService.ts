@@ -9,6 +9,7 @@ export async function getQuotations() {
     orderBy: { createdAt: "desc" },
     include: {
       client: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
       items: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });

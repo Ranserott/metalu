@@ -3,6 +3,7 @@ export type Quotation = {
   number: string;
   clientId: string;
   client: { id: string; name: string };
+  createdBy?: { id: string; name: string | null } | null;
   status: string;
   validUntil: Date;
   subtotal: number;

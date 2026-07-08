@@ -128,6 +128,10 @@ export function QuotationView({ quotation }: Props) {
           <p className="text-xs text-gray-500 uppercase">Válido hasta</p>
           <p className="font-semibold">{new Date(quotation.validUntil).toLocaleDateString("es-CL")}</p>
         </div>
+        <div>
+          <p className="text-xs text-gray-500 uppercase">Creado por</p>
+          <p className="font-semibold">{quotation.createdBy?.name || "—"}</p>
+        </div>
         {quotation.notes && (
           <div className="col-span-2">
             <p className="text-xs text-gray-500 uppercase">Descripción</p>
