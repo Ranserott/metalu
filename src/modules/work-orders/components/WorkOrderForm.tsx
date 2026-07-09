@@ -70,6 +70,7 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   const [quotationModalOpen, setQuotationModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientInfo | null>(null);
   const [selectedQuotationLabel, setSelectedQuotationLabel] = useState("");
+  const [quotationLoading, setQuotationLoading] = useState(false);
 
   const [number] = useState(initialNumber || "");
   const [titulo, setTitulo] = useState("");
@@ -164,6 +165,66 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   function handleClientSelect(client: ClientInfo) {
     setSelectedClient(client);
     setClientModalOpen(false);
+  }
+
+  async function applyQuotation(quotationId: string) {
+    setQuotationLoading(true);
+    try {
+      const res = await fetch(`/api/quotations/${quotationId}`);
+      if (!res.ok) throw new Error("Error al cargar cotización");
+      const q = await res.json();
+
+      setRazonSocial((cur) => (cur === "" ? (q.client?.name ?? "") : cur));
+      setRut((cur) => (cur === "" ? (q.client?.code ?? "") : cur));
+      setTitulo((cur) => (cur === "" ? (q.descripcionTrabajo ?? "") : cur));
+      setEntregadoPor((cur) => (cur === "" ? (q.atencion ?? "") : cur));
+      setObservaciones((cur) => (cur === "" ? (q.notes ?? "") : cur));
+      setPlazoDias((cur) => {
+        if (cur !== "") return cur;
+        const d = q.plazoEntrega;
+        if (d == null || d === "") return "";
+        const n = typeof d === "number" ? d : parseFloat(String(d));
+        return Number.isFinite(n) ? n : "";
+      });
+      setDescuentoPorcentaje((cur) => {
+        if (cur !== "") return cur;
+        if (q.discountType === "PERCENTAGE" && q.discount) {
+          const n = typeof q.discount === "number" ? q.discount : parseFloat(String(q.discount));
+          return Number.isFinite(n) ? n : "";
+        }
+        return "";
+      });
+
+      if (!selectedClient && q.client) {
+        setSelectedClient({ id: q.client.id, name: q.client.name });
+      }
+
+      setItems((cur) => {
+        const isDefault =
+          cur.length === 1 &&
+          cur[0].description === "" &&
+          cur[0].quantity === 1 &&
+          cur[0].unitPrice === 0;
+        if (!isDefault) return cur;
+        const newItems: LineItem[] = (q.items ?? []).map((it: any) => ({
+          description: it.description ?? "",
+          quantity:
+            typeof it.quantity === "number"
+              ? it.quantity
+              : parseFloat(String(it.quantity ?? 1)) || 1,
+          unitPrice:
+            typeof it.unitPrice === "number"
+              ? it.unitPrice
+              : parseFloat(String(it.unitPrice ?? 0)) || 0,
+        }));
+        return newItems.length > 0 ? newItems : cur;
+      });
+    } catch (err) {
+      console.error("[WorkOrderForm] applyQuotation error:", err);
+      alert("No se pudo cargar la cotización para autocompletar");
+    } finally {
+      setQuotationLoading(false);
+    }
   }
 
   function addLine() {
@@ -757,6 +818,7 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
         onSelect={(q) => {
           setNroCotizacion(q.id);
           setSelectedQuotationLabel(q.number);
+          applyQuotation(q.id);
         }}
       />
     </div>
