@@ -30,17 +30,29 @@ function LoginForm() {
 
   async function onSubmit(data: LoginInput) {
     setIsLoading(true);
-    const result = await signIn("credentials", {
-      username: data.username,
-      password: data.password,
-      redirect: false,
-    });
-    setIsLoading(false);
+    try {
+      const result = await signIn("credentials", {
+        username: data.username,
+        password: data.password,
+        redirect: false,
+      });
 
-    if (result?.ok) {
-      router.push(callbackUrl);
-    } else {
-      form.setError("root", { message: "Credenciales inválidas" });
+      if (result?.ok) {
+        router.push(callbackUrl);
+        return;
+      }
+
+      const detail = result?.error
+        ? ` [${result.error}${result.status ? ` ${result.status}` : ""}]`
+        : "";
+      form.setError("root", { message: `Credenciales inválidas${detail}` });
+    } catch (err) {
+      console.error("[login] signIn threw:", err);
+      form.setError("root", {
+        message: `Error de red: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setIsLoading(false);
     }
   }
 
