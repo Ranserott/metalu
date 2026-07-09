@@ -41,5 +41,5 @@ export const authConfigEdge = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthConfig;
