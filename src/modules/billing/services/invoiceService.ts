@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma/prisma";
+import { Invoice } from "../types/invoice";
 import { InvoiceInput } from "../validations/invoiceSchemas";
 
 const mockInvoices = [
@@ -34,15 +35,33 @@ async function nextInvoiceNumber(): Promise<string> {
   return `${prefix}${String(lastSeq + 1).padStart(3, "0")}`;
 }
 
-export async function getInvoices() {
+export async function getInvoices(): Promise<Invoice[]> {
   try {
-    return await prisma.invoice.findMany({
+    const rows = await prisma.invoice.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
       include: { client: { select: { name: true } } },
     });
+    return rows.map((inv) => ({
+      id: inv.id,
+      number: inv.number,
+      clientId: inv.clientId,
+      workOrderId: inv.workOrderId,
+      type: inv.type,
+      status: inv.status,
+      series: inv.series,
+      numberInSeries: inv.numberInSeries,
+      issueDate: inv.issueDate,
+      dueDate: inv.dueDate,
+      subtotal: inv.subtotal?.toString() ?? "0",
+      tax: inv.tax?.toString() ?? "0",
+      total: inv.total?.toString() ?? "0",
+      paidAt: inv.paidAt,
+      createdAt: inv.createdAt,
+      updatedAt: inv.updatedAt,
+    }));
   } catch {
-    return mockInvoices;
+    return mockInvoices as Invoice[];
   }
 }
 
