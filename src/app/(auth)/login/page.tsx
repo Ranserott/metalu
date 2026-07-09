@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { z } from "zod";
 import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ const LoginSchema = z.object({
 
 type LoginInput = z.infer<typeof LoginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -45,41 +45,49 @@ export default function LoginPage() {
   }
 
   return (
+    <Card className="w-[400px] border-[#004C63]">
+      <CardHeader className="space-y-4 pb-4">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-[#004C63]">MetalFlow</h1>
+          <p className="text-sm text-gray-500">Sistema de gestión industrial</p>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            label="Usuario"
+            type="text"
+            placeholder="admin"
+            error={form.formState.errors.username?.message}
+            {...form.register("username")}
+          />
+          <FormField
+            label="Contraseña"
+            type="password"
+            placeholder="••••••••"
+            error={form.formState.errors.password?.message}
+            {...form.register("password")}
+          />
+          {form.formState.errors.root && (
+            <p className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded">
+              {form.formState.errors.root.message}
+            </p>
+          )}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#101D2D] to-[#1a2d3f]">
-      <Card className="w-[400px] border-[#004C63]">
-        <CardHeader className="space-y-4 pb-4">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-[#004C63]">MetalFlow</h1>
-            <p className="text-sm text-gray-500">Sistema de gestión industrial</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              label="Usuario"
-              type="text"
-              placeholder="admin"
-              error={form.formState.errors.username?.message}
-              {...form.register("username")}
-            />
-            <FormField
-              label="Contraseña"
-              type="password"
-              placeholder="••••••••"
-              error={form.formState.errors.password?.message}
-              {...form.register("password")}
-            />
-            {form.formState.errors.root && (
-              <p className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded">
-                {form.formState.errors.root.message}
-              </p>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<div className="text-white">Cargando...</div>}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
