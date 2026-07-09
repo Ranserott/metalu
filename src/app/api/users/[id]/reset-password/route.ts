@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { resetUserPassword } from "@/modules/users/services/userService";
-import { ResetPasswordSchema } from "@/modules/users/validations/userSchemas";
+import { changePassword } from "@/modules/users/services/userService";
+import { ChangePasswordAdminSchema } from "@/modules/users/validations/userSchemas";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -13,13 +13,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const body = await req.json();
-  const parsed = ResetPasswordSchema.safeParse(body);
+  const parsed = ChangePasswordAdminSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
   try {
-    await resetUserPassword(id, parsed.data.newPassword);
+    await changePassword(id, parsed.data.newPassword);
     return NextResponse.json({ success: true, message: "Password actualizado" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
