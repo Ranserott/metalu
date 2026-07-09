@@ -179,7 +179,7 @@ export default function WorkOrdersPage() {
       </Dialog>
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent size="lg" className="max-h-[95vh] overflow-y-auto">
+        <DialogContent size="wide" className="max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[var(--theme-dark)] text-lg font-bold">
               DETALLE DE TRABAJO
