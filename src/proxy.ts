@@ -1,9 +1,9 @@
-import NextAuth from "next-auth";
-import { authConfigEdge } from "@/lib/auth/auth.config.edge";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const nextAuthInstance = NextAuth(authConfigEdge);
-
-export const proxy = nextAuthInstance.auth;
+export function proxy(_request: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
