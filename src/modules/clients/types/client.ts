@@ -10,7 +10,7 @@ export type Client = {
   notes: string | null;
   giro: string | null;
   oc: string | null;
-  lastPaymentDate: string | null;
+  lastPaymentDate: Date | string | null;
   currentBalance: number | null;
   isActive: boolean;
   createdAt: Date;
