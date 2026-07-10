@@ -1,3 +1,5 @@
+import { ScrollText } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getAuditLogs } from "@/modules/audit-logs/services/auditLogService";
 import { AuditLogTable } from "@/modules/audit-logs/components/AuditLogTable";
 
@@ -6,12 +8,11 @@ export default async function AuditLogsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Auditoria</h1>
-          <p className="text-sm text-gray-500">Registro de auditoria</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={ScrollText}
+        title="Auditoria"
+        description="Registro de auditoria"
+      />
 
       <AuditLogTable data={auditLogs} />
     </div>
