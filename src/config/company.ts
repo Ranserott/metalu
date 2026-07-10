@@ -7,10 +7,12 @@
  */
 export const COMPANY = {
   name: "SOC.MECANICA Y METALURGICA ÑUBLE LTDA",
-  address: "AVDA. FRANCIA Nº 352 CHILLAN",
+  address: "AVDA.FRANCIA N°352",
+  neighborhood: "POBLACION SANTA ELVIRA",
+  city: "CHILLAN",
   rut: "76.032.350-0",
   giro: "Metalurgica.",
-  phone: "42-2278577",
+  phone: "(42)2278577",
   email: "metalurgica-nuble@hotmail.com",
   logoPath: "/logo.svg",
 } as const;

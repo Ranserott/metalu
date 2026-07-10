@@ -2,9 +2,10 @@ import React from "react";
 import { join } from "path";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
-import { registerPdfFonts, PDF_FONT_FAMILY } from "@/lib/pdf/fonts";
 
-registerPdfFonts();
+// Monospace "Courier" is a built-in PDF font in @react-pdf/renderer — no
+// registration needed. Matches the maqueta layout (Solicitud OT.pdf).
+const MONO_FONT = "Courier";
 
 /**
  * @react-pdf/renderer runs server-side in plain Node. It does NOT resolve
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 60,
     paddingHorizontal: 40,
-    fontFamily: PDF_FONT_FAMILY,
+    fontFamily: MONO_FONT,
     fontSize: 10,
     color: "#111",
   },
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 700,
     marginBottom: 4,
-    fontFamily: PDF_FONT_FAMILY,
+    fontFamily: MONO_FONT,
   },
   companyName: {
     fontWeight: 700,
@@ -215,8 +216,7 @@ const styles = StyleSheet.create({
     borderRight: 0,
   },
   cItem: { width: "8%" },
-  cDet: { width: "52%" },
-  cUnit: { width: "12%" },
+  cDet: { width: "64%" },
   cPrice: { width: "14%" },
   cTotal: { width: "14%" },
   totalRow: {
@@ -325,10 +325,13 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
           <View style={styles.headerRight}>
             <Text style={styles.title}>TRABAJO N°{workOrder.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
-            <Text style={styles.companyLine}>{COMPANY.address}</Text>
+            <Text style={styles.companyLine}>
+              {COMPANY.address}  *  {COMPANY.neighborhood}
+            </Text>
+            <Text style={styles.companyLine}>
+              FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
+            </Text>
             <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
-            <Text style={styles.companyLine}>GIRO: {COMPANY.giro}</Text>
-            <Text style={styles.companyLine}>FONO: {COMPANY.phone}</Text>
             <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
           </View>
         </View>
@@ -385,7 +388,7 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
         </View>
 
         {/* ITEMS TABLE */}
-        <SectionHeader title="CANT | DETALLE | UNIDAD | P. UNITARIO | TOTAL" />
+        <SectionHeader title="CANT | DETALLE | P. UNITARIO | TOTAL" />
         <View style={styles.table}>
           {items.length === 0 ? (
             <View style={styles.tRow}>
@@ -396,7 +399,6 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
               <View style={styles.tRow} key={it.id ?? idx}>
                 <Text style={[styles.tCell, styles.cItem]}>{idx + 1}</Text>
                 <Text style={[styles.tCell, styles.cDet]}>{it.material}</Text>
-                <Text style={[styles.tCell, styles.cUnit]}>{it.unit || "UN"}</Text>
                 <Text style={[styles.tCell, styles.cPrice]}>
                   {formatCLP(toNum(it.unitPrice))}
                 </Text>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer, Loader2 } from "lucide-react";
+import { Printer, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WorkOrder, WorkOrderItem } from "../types/workOrder";
 
@@ -41,7 +41,7 @@ function n(v: number | string | null | undefined): number {
 }
 
 export function WorkOrderDetailView({ workOrder }: Props) {
-  const [printing, setPrinting] = useState(false);
+  const [busy, setBusy] = useState<null | "download" | "print">(null);
   const [printError, setPrintError] = useState<string | null>(null);
 
   const items = workOrder.materials ?? [];
@@ -55,16 +55,20 @@ export function WorkOrderDetailView({ workOrder }: Props) {
   const iva = n(workOrder.iva);
   const total = n(workOrder.total);
 
-  async function handlePrint() {
+  async function fetchPdfBlob(): Promise<Blob> {
+    const res = await fetch(`/api/work-orders/${workOrder.id}/pdf`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Error al generar el PDF");
+    }
+    return res.blob();
+  }
+
+  async function handleDownload() {
     setPrintError(null);
-    setPrinting(true);
+    setBusy("download");
     try {
-      const res = await fetch(`/api/work-orders/${workOrder.id}/pdf`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Error al generar el PDF");
-      }
-      const blob = await res.blob();
+      const blob = await fetchPdfBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -76,31 +80,82 @@ export function WorkOrderDetailView({ workOrder }: Props) {
     } catch (err: any) {
       setPrintError(err?.message ?? "Error desconocido");
     } finally {
-      setPrinting(false);
+      setBusy(null);
+    }
+  }
+
+  async function handlePrint() {
+    setPrintError(null);
+    setBusy("print");
+    try {
+      const blob = await fetchPdfBlob();
+      const url = URL.createObjectURL(blob);
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (err) {
+          console.error("[work-order] print failed:", err);
+        } finally {
+          // Give the print dialog time to open before we tear the iframe down.
+          setTimeout(() => {
+            iframe.remove();
+            URL.revokeObjectURL(url);
+          }, 1000);
+        }
+      };
+    } catch (err: any) {
+      setPrintError(err?.message ?? "Error desconocido");
+    } finally {
+      setBusy(null);
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-3">
         <div>
           <h1 className="text-2xl font-bold">Trabajo {workOrder.number}</h1>
           <p className="text-sm text-muted-foreground">
             {workOrder.client?.name || workOrder.razonSocial || "—"}
           </p>
         </div>
-        <Button
-          onClick={handlePrint}
-          disabled={printing}
-          className="bg-[#14679C] hover:bg-[#14679C]/90"
-        >
-          {printing ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Printer className="h-4 w-4 mr-2" />
-          )}
-          {printing ? "Generando PDF..." : "Imprimir PDF"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleDownload}
+            disabled={busy !== null}
+            variant="outline"
+            className="border-[#14679C] text-[#14679C] hover:bg-[#14679C]/10"
+          >
+            {busy === "download" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            {busy === "download" ? "Generando..." : "Generar PDF"}
+          </Button>
+          <Button
+            onClick={handlePrint}
+            disabled={busy !== null}
+            className="bg-[#14679C] hover:bg-[#14679C]/90"
+          >
+            {busy === "print" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Printer className="h-4 w-4 mr-2" />
+            )}
+            {busy === "print" ? "Preparando..." : "Imprimir"}
+          </Button>
+        </div>
       </div>
 
       {printError && (
