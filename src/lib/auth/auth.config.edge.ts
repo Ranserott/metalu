@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import { NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/api/auth", "/api/debug-login"];
+const PUBLIC_ROUTES = ["/login", "/api/auth"];
 
 export const authConfigEdge = {
   providers: [],
