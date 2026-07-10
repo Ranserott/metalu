@@ -151,35 +151,27 @@ const styles = StyleSheet.create({
   },
   boxFieldRow: {
     flexDirection: "row",
-    borderBottom: 0,
-    minHeight: 13,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "#111",
+    minHeight: 14,
   },
   boxFieldRowLast: {
-    borderBottom: 0,
+    flexDirection: "row",
+    borderBottomWidth: 0,
+    minHeight: 14,
   },
-  boxLabelCell: {
-    flexGrow: 0,
-    flexShrink: 0,
-    flexBasis: 110,
+  cell: {
     paddingVertical: 1,
     paddingHorizontal: 4,
+  },
+  cellLabel: { width: "22%" },
+  cellValue: { width: "28%" },
+  cellLabelText: {
     fontSize: 10,
     fontWeight: 700,
   },
-  boxValueCell: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    paddingVertical: 1,
-    paddingHorizontal: 4,
-    fontSize: 10,
-  },
-  boxValueCellLast: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    paddingVertical: 1,
-    paddingHorizontal: 4,
+  cellValueText: {
     fontSize: 10,
   },
   entregadoBox: {
@@ -372,10 +364,18 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
                   : styles.boxFieldRow
               }
             >
-              <Text style={styles.boxLabelCell}>{lblL}</Text>
-              <Text style={styles.boxValueCell}>{valL}</Text>
-              <Text style={styles.boxLabelCell}>{lblR}</Text>
-              <Text style={styles.boxValueCellLast}>{valR}</Text>
+              <View style={[styles.cell, styles.cellLabel]}>
+                <Text style={styles.cellLabelText}>{lblL}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellValue]}>
+                <Text style={styles.cellValueText}>{valL}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellLabel]}>
+                <Text style={styles.cellLabelText}>{lblR}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellValue]}>
+                <Text style={styles.cellValueText}>{valR}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -383,10 +383,14 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
         {/* ENTREGADO POR BOX */}
         <View style={styles.entregadoBox}>
           <View style={styles.boxFieldRow}>
-            <Text style={styles.boxLabelCell}>Entregado por:</Text>
-            <Text style={{ flex: 1, paddingVertical: 1, paddingHorizontal: 6, fontSize: 10 }}>
-              {workOrder.entregadoPor || "—"}
-            </Text>
+            <View style={[styles.cell, styles.cellLabel]}>
+              <Text style={styles.cellLabelText}>Entregado por:</Text>
+            </View>
+            <View style={[styles.cell, { width: "78%" }]}>
+              <Text style={styles.cellValueText}>
+                {workOrder.entregadoPor || "—"}
+              </Text>
+            </View>
           </View>
         </View>
 
