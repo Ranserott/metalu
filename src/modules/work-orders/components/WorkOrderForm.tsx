@@ -64,6 +64,41 @@ const LOCALES = [
   "SUCURSAL 1",
 ];
 
+function mapQuotationToState(q: any) {
+  return {
+    razonSocial: q.client?.name ?? "",
+    rut: q.client?.code ?? "",
+    titulo: q.descripcionTrabajo ?? "",
+    entregadoPor: q.atencion ?? "",
+    observaciones: q.notes ?? "",
+    plazoDias: (() => {
+      const d = q.plazoEntrega;
+      if (d == null || d === "") return "";
+      const n = typeof d === "number" ? d : parseFloat(String(d));
+      return Number.isFinite(n) ? n : "";
+    })(),
+    descuentoPorcentaje: (() => {
+      if (q.discountType === "PERCENTAGE" && q.discount) {
+        const n = typeof q.discount === "number" ? q.discount : parseFloat(String(q.discount));
+        return Number.isFinite(n) ? n : "";
+      }
+      return "";
+    })(),
+    client: q.client ? { id: q.client.id, name: q.client.name } : null,
+    items: (q.items ?? []).map((it: any) => ({
+      description: it.description ?? "",
+      quantity:
+        typeof it.quantity === "number"
+          ? it.quantity
+          : parseFloat(String(it.quantity ?? 1)) || 1,
+      unitPrice:
+        typeof it.unitPrice === "number"
+          ? it.unitPrice
+          : parseFloat(String(it.unitPrice ?? 0)) || 0,
+    })),
+  };
+}
+
 export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, onCancel }: WorkOrderFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
@@ -71,6 +106,7 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   const [selectedClient, setSelectedClient] = useState<ClientInfo | null>(null);
   const [selectedQuotationLabel, setSelectedQuotationLabel] = useState("");
   const [quotationLoading, setQuotationLoading] = useState(false);
+  const [lastAppliedQuotationId, setLastAppliedQuotationId] = useState<string | null>(null);
 
   const [number] = useState(initialNumber || "");
   const [titulo, setTitulo] = useState("");
@@ -168,57 +204,52 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   }
 
   async function applyQuotation(quotationId: string) {
+    if (quotationId === lastAppliedQuotationId) return;
     setQuotationLoading(true);
     try {
       const res = await fetch(`/api/quotations/${quotationId}`);
       if (!res.ok) throw new Error("Error al cargar cotización");
       const q = await res.json();
+      const mapped = mapQuotationToState(q);
+      const isFirstApply = lastAppliedQuotationId === null;
 
-      setRazonSocial((cur) => (cur === "" ? (q.client?.name ?? "") : cur));
-      setRut((cur) => (cur === "" ? (q.client?.code ?? "") : cur));
-      setTitulo((cur) => (cur === "" ? (q.descripcionTrabajo ?? "") : cur));
-      setEntregadoPor((cur) => (cur === "" ? (q.atencion ?? "") : cur));
-      setObservaciones((cur) => (cur === "" ? (q.notes ?? "") : cur));
-      setPlazoDias((cur) => {
-        if (cur !== "") return cur;
-        const d = q.plazoEntrega;
-        if (d == null || d === "") return "";
-        const n = typeof d === "number" ? d : parseFloat(String(d));
-        return Number.isFinite(n) ? n : "";
-      });
-      setDescuentoPorcentaje((cur) => {
-        if (cur !== "") return cur;
-        if (q.discountType === "PERCENTAGE" && q.discount) {
-          const n = typeof q.discount === "number" ? q.discount : parseFloat(String(q.discount));
-          return Number.isFinite(n) ? n : "";
+      if (isFirstApply) {
+        setRazonSocial((cur) => (cur === "" ? mapped.razonSocial : cur));
+        setRut((cur) => (cur === "" ? mapped.rut : cur));
+        setTitulo((cur) => (cur === "" ? mapped.titulo : cur));
+        setEntregadoPor((cur) => (cur === "" ? mapped.entregadoPor : cur));
+        setObservaciones((cur) => (cur === "" ? mapped.observaciones : cur));
+        setPlazoDias((cur) => (cur === "" ? mapped.plazoDias : cur));
+        setDescuentoPorcentaje((cur) => (cur === "" ? mapped.descuentoPorcentaje : cur));
+        if (!selectedClient && mapped.client) {
+          setSelectedClient(mapped.client);
         }
-        return "";
-      });
-
-      if (!selectedClient && q.client) {
-        setSelectedClient({ id: q.client.id, name: q.client.name });
+        setItems((cur) => {
+          const isDefault =
+            cur.length === 1 &&
+            cur[0].description === "" &&
+            cur[0].quantity === 1 &&
+            cur[0].unitPrice === 0;
+          if (!isDefault) return cur;
+          return mapped.items.length > 0 ? mapped.items : cur;
+        });
+      } else {
+        setRazonSocial(mapped.razonSocial);
+        setRut(mapped.rut);
+        setTitulo(mapped.titulo);
+        setEntregadoPor(mapped.entregadoPor);
+        setObservaciones(mapped.observaciones);
+        setPlazoDias(mapped.plazoDias);
+        setDescuentoPorcentaje(mapped.descuentoPorcentaje);
+        if (mapped.client) {
+          setSelectedClient(mapped.client);
+        }
+        setItems(
+          mapped.items.length > 0 ? mapped.items : [{ description: "", quantity: 1, unitPrice: 0 }]
+        );
       }
 
-      setItems((cur) => {
-        const isDefault =
-          cur.length === 1 &&
-          cur[0].description === "" &&
-          cur[0].quantity === 1 &&
-          cur[0].unitPrice === 0;
-        if (!isDefault) return cur;
-        const newItems: LineItem[] = (q.items ?? []).map((it: any) => ({
-          description: it.description ?? "",
-          quantity:
-            typeof it.quantity === "number"
-              ? it.quantity
-              : parseFloat(String(it.quantity ?? 1)) || 1,
-          unitPrice:
-            typeof it.unitPrice === "number"
-              ? it.unitPrice
-              : parseFloat(String(it.unitPrice ?? 0)) || 0,
-        }));
-        return newItems.length > 0 ? newItems : cur;
-      });
+      setLastAppliedQuotationId(quotationId);
     } catch (err) {
       console.error("[WorkOrderForm] applyQuotation error:", err);
       alert("No se pudo cargar la cotización para autocompletar");
@@ -249,6 +280,7 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
     setCelular("");
     setNroCotizacion("");
     setSelectedQuotationLabel("");
+    setLastAppliedQuotationId(null);
     setFechaTrabajo("");
     setLocal("CASA MATRIZ");
     setEncargadoId(null);
