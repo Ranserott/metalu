@@ -1,19 +1,19 @@
+import { Settings } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getSettings } from "@/modules/settings/services/settingService";
 import { SettingTable } from "@/modules/settings/components/SettingTable";
 import { ThemeSelector } from "@/lib/theme/ThemeSelector";
-import { Palette } from "lucide-react";
 
 export default async function SettingsPage() {
   const settings = await getSettings();
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Configuracion</h1>
-          <p className="text-sm text-gray-500">Configuracion del sistema</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={Settings}
+        title="Configuración"
+        description="Configuración del sistema"
+      />
 
       <section className="border rounded-lg overflow-hidden shadow-sm bg-white">
         <div
@@ -22,7 +22,6 @@ export default async function SettingsPage() {
             background: "linear-gradient(to right, var(--theme-primary), var(--theme-dark))",
           }}
         >
-          <Palette className="w-4 h-4 text-white" />
           <span className="text-white font-semibold text-xs uppercase tracking-wide">
             Tema
           </span>
