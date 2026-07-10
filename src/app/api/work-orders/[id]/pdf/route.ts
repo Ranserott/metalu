@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma/prisma";
 import { getWorkOrderById } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderPdf } from "@/modules/work-orders/pdf/WorkOrderPdf";
 import { getLogoDataUri } from "@/lib/pdf/logo";
-import { pdf } from "@react-pdf/renderer";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 
 export const runtime = "nodejs";
@@ -53,13 +53,18 @@ export async function GET(
     // Returns null if public/logo.svg is missing on the current environment.
     const logoSrc = getLogoDataUri();
 
-    const buffer = await pdf(
+    // renderToBuffer consumes the pdfkit stream into a real Node Buffer.
+    // Do NOT use `pdf(...).toBuffer()` — despite its name it returns a STREAM,
+    // not a Buffer (see the TODO in @react-pdf/renderer source). A stream has
+    // no `.byteLength`, so `Content-Length` becomes "undefined" and Vercel's
+    // response layer rejects it with a 500.
+    const buffer = await renderToBuffer(
       createElement(WorkOrderPdf, {
         workOrder,
         users,
         logoSrc,
-      }) as Parameters<typeof pdf>[0]
-    ).toBuffer();
+      }) as Parameters<typeof renderToBuffer>[0]
+    );
 
     const filename = `Trabajo-${workOrder.number}.pdf`;
 
