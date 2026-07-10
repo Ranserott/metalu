@@ -1,18 +1,16 @@
-import React from "react";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
-import { registerPdfFonts, PDF_FONT_FAMILY } from "@/lib/pdf/fonts";
 
-registerPdfFonts();
-
-const clp = new Intl.NumberFormat("es-CL", {
-  style: "currency",
-  currency: "CLP",
+const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-function formatCLP(n: number): string {
-  return clp.format(Number.isFinite(n) ? n : 0);
+function formatNumber(n: number): string {
+  return numberFormatter.format(Number.isFinite(n) ? n : 0);
+}
+
+function formatQuantity(n: number): string {
+  return n.toFixed(2);
 }
 
 function formatDate(d: Date | string): string {
@@ -23,16 +21,22 @@ function formatDate(d: Date | string): string {
   return `${dd}-${mm}-${yyyy}`;
 }
 
-function toNum(v: number | string | { toNumber: () => number } | null | undefined): number {
+type DecimalLike = { toNumber: () => number };
+
+function isDecimalLike(v: unknown): v is DecimalLike {
+  return typeof v === "object" && v !== null && "toNumber" in v && typeof v.toNumber === "function";
+}
+
+function toNum(v: number | string | DecimalLike | null | undefined): number {
   if (v == null) return 0;
   if (typeof v === "number") return v;
   if (typeof v === "string") {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : 0;
   }
-  if (typeof (v as any).toNumber === "function") {
+  if (isDecimalLike(v)) {
     try {
-      return (v as any).toNumber();
+      return v.toNumber();
     } catch {
       return 0;
     }
@@ -44,15 +48,12 @@ function toNum(v: number | string | { toNumber: () => number } | null | undefine
 type Item = {
   id: string;
   description: string;
-  quantity: number | string | { toNumber: () => number };
-  unitPrice: number | string | { toNumber: () => number };
-  total: number | string | { toNumber: () => number };
+  quantity: number | string | DecimalLike;
+  unitPrice: number | string | DecimalLike;
+  total: number | string | DecimalLike;
   type: "MATERIAL" | "WORK";
 };
 
-// Use a structural type that matches the Prisma return shape so callers don't
-// need to coerce Decimal -> number. We accept any for monetary fields and
-// coerce internally via toNum().
 type Props = {
   quotation: {
     id: string;
@@ -70,249 +71,302 @@ type Props = {
     };
     createdBy?: { id: string; name: string | null } | null;
     items: Item[];
-    subtotal: number | string | { toNumber: () => number };
-    tax: number | string | { toNumber: () => number };
-    total: number | string | { toNumber: () => number };
-    discount?: number | string | { toNumber: () => number } | null;
+    subtotal: number | string | DecimalLike;
+    tax: number | string | DecimalLike;
+    total: number | string | DecimalLike;
+    discount?: number | string | DecimalLike | null;
     discountType?: "NONE" | "AMOUNT" | "PERCENT" | null;
     createdAt: Date | string;
     validUntil: Date | string;
-    [k: string]: any;
+    [k: string]: unknown;
   };
-  /** Data-URI logo (resolved in the route via getLogoDataUri). Null if logo file missing. */
   logoSrc?: string | null;
 };
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 28,
-    paddingBottom: 60,
-    paddingHorizontal: 40,
-    fontFamily: PDF_FONT_FAMILY,
+    paddingTop: 14,
+    paddingBottom: 26,
+    paddingHorizontal: 12,
+    fontFamily: "Courier",
     fontSize: 10,
     color: "#111",
   },
-  headerRow: {
+  bold: {
+    fontWeight: 700,
+  },
+  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 10,
   },
-  logo: {
-    // BOTH width and height must be set: @react-pdf/renderer reads the SVG's
-    // intrinsic dimensions (512x512 in this file) when height is missing,
-    // which renders the logo at full size regardless of `width`.
-    width: 70,
-    height: 70,
+  logoWrap: {
+    width: 135,
   },
-  headerRight: {
-    flexDirection: "column",
-    alignItems: "flex-end",
-    maxWidth: 360,
+  logo: {
+    width: 92,
+    height: 92,
+  },
+  headerCenter: {
+    width: 330,
+    paddingTop: 18,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 700,
-    marginBottom: 4,
-    fontFamily: PDF_FONT_FAMILY,
+    textAlign: "center",
+    marginBottom: 3,
+    letterSpacing: 1.2,
   },
   companyName: {
-    fontWeight: 700,
     fontSize: 11,
+    fontWeight: 700,
   },
   companyLine: {
     fontSize: 10,
+    lineHeight: 1.15,
   },
   companyMail: {
-    fontWeight: 700,
     fontSize: 10,
+    fontWeight: 700,
+    lineHeight: 1.15,
   },
-  clientRow: {
+  pageNumber: {
+    width: 90,
+    paddingTop: 30,
+    fontSize: 9,
+    textAlign: "right",
+  },
+  clientDateRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginTop: 4,
+    marginBottom: 2,
   },
   clientBlock: {
-    flexDirection: "column",
+    width: 410,
   },
-  clientLine: {
-    fontSize: 10,
+  fieldRow: {
+    flexDirection: "row",
+    minHeight: 12,
+  },
+  label: {
+    width: 76,
+    fontWeight: 700,
+  },
+  fieldValue: {
+    flexGrow: 1,
+  },
+  dateBlock: {
+    width: 165,
+    paddingTop: 2,
+    flexDirection: "row",
+  },
+  dateLabel: {
+    width: 45,
+  },
+  description: {
+    marginTop: 1,
+    marginBottom: 3,
+    flexDirection: "row",
+  },
+  descriptionLabel: {
+    fontWeight: 700,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    marginTop: 1,
     marginBottom: 1,
   },
-  fecha: {
-    fontSize: 10,
-    alignSelf: "flex-start",
-  },
-  descripcionLine: {
-    fontSize: 10,
-    marginBottom: 8,
-  },
-  sectionBar: {
-    backgroundColor: "#e6e6e6",
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    marginTop: 6,
-    marginBottom: 0,
-  },
-  sectionBarText: {
-    fontSize: 11,
+  tableHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "#888",
+    paddingBottom: 1,
+    marginBottom: 2,
     fontWeight: 700,
   },
-  table: {
-    borderTop: 1,
-    borderLeft: 1,
-    borderRight: 1,
-    borderColor: "#111",
-  },
-  tRow: {
+  row: {
     flexDirection: "row",
-    borderBottom: 1,
-    borderColor: "#111",
-    minHeight: 18,
+    minHeight: 14,
   },
-  tCell: {
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    fontSize: 10,
-    borderRight: 1,
-    borderColor: "#111",
+  itemCol: {
+    width: 34,
   },
-  tCellLast: {
-    borderRight: 0,
+  descCol: {
+    width: 350,
   },
-  cItem: { width: "8%" },
-  cDesc: { width: "44%" },
-  cUnit: { width: "14%" },
-  cPrice: { width: "17%" },
-  cTotal: { width: "17%" },
-  cLabel: { width: "50%" },
-  cValue: { width: "50%" },
-  totalRow: {
+  unitCol: {
+    width: 58,
+    textAlign: "right",
+  },
+  priceCol: {
+    width: 82,
+    textAlign: "right",
+  },
+  totalCol: {
+    width: 82,
+    textAlign: "right",
+  },
+  sectionTotal: {
     flexDirection: "row",
-    borderTop: 1,
-    borderColor: "#111",
-    paddingVertical: 3,
-    paddingHorizontal: 4,
     justifyContent: "flex-end",
-  },
-  resumenRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  resumenTable: {
-    width: "55%",
-  },
-  resumenRight: {
-    width: "40%",
-  },
-  resumenLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 2,
-    fontSize: 10,
-  },
-  resumenTotal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 3,
-    fontSize: 11,
+    marginTop: 3,
+    marginBottom: 2,
     fontWeight: 700,
-    borderTop: 1,
-    borderColor: "#111",
-    marginTop: 2,
   },
-  footerFixed: {
+  sectionTotalLabel: {
+    width: 60,
+    textAlign: "right",
+  },
+  sectionTotalValue: {
+    width: 92,
+    textAlign: "right",
+  },
+  summaryTable: {
+    width: 382,
+    marginTop: 0,
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "#aaa",
+    paddingBottom: 1,
+    fontWeight: 700,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    minHeight: 14,
+    fontWeight: 700,
+  },
+  summaryItemCol: {
+    width: 44,
+    textAlign: "right",
+    paddingRight: 10,
+  },
+  summaryDescCol: {
+    width: 240,
+  },
+  summaryTotalCol: {
+    width: 98,
+    textAlign: "right",
+  },
+  totalsBlock: {
+    width: 450,
+    marginTop: 4,
+    paddingTop: 2,
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: "#888",
+  },
+  totalsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    minHeight: 14,
+    fontWeight: 700,
+  },
+  totalsLabel: {
+    width: 170,
+    textAlign: "right",
+  },
+  totalsValue: {
+    width: 98,
+    textAlign: "right",
+  },
+  totalsPercent: {
+    width: 60,
+    textAlign: "right",
+  },
+  footer: {
     position: "absolute",
-    left: 40,
-    right: 40,
-    bottom: 30,
+    left: 12,
+    right: 12,
+    bottom: 22,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    fontSize: 10,
   },
   footerLeft: {
-    flexDirection: "column",
-    width: "55%",
-  },
-  footerRight: {
-    width: "40%",
-    alignItems: "center",
-  },
-  firmaLine: {
-    borderTop: 1,
-    borderColor: "#111",
-    width: "100%",
-    marginBottom: 4,
-  },
-  firmaText: {
-    fontStyle: "italic",
+    width: 260,
     fontSize: 10,
+  },
+  stamp: {
+    width: 150,
+    minHeight: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: "#ddd",
+    paddingTop: 4,
+  },
+  stampText: {
+    fontSize: 7,
     textAlign: "center",
+    color: "#333",
   },
 });
 
-function SectionHeader({ title }: { title: string }) {
+function FieldRow({ label, value, boldValue = false }: { label: string; value?: string | null; boldValue?: boolean }) {
   return (
-    <View style={styles.sectionBar} fixed>
-      <Text style={styles.sectionBarText}>{title}</Text>
+    <View style={styles.fieldRow}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.fieldValue, boldValue ? styles.bold : null]}>{value || ""}</Text>
     </View>
   );
 }
 
-function ItemsTable({
-  items,
-  totalsLabel,
-  totalsValue,
-}: {
-  items: Item[];
-  totalsLabel: string;
-  totalsValue: number;
-}) {
+function SectionTitle({ children }: { children: string }) {
+  return <Text style={styles.sectionTitle}>{children}</Text>;
+}
+
+function ItemsTable({ items, total }: { items: Item[]; total: number }) {
   return (
     <View>
-      <SectionHeader title="Item | Descripcion | Unidad | P.Unitario | Total" />
-      <View style={styles.table}>
-        <View style={styles.tRow}>
-          <Text style={[styles.tCell, styles.cItem]}></Text>
-          <Text style={[styles.tCell, styles.cDesc]}></Text>
-          <Text style={[styles.tCell, styles.cUnit]}></Text>
-          <Text style={[styles.tCell, styles.cPrice]}></Text>
-          <Text style={[styles.tCell, styles.cTotal, styles.tCellLast]}></Text>
-        </View>
-        {items.map((it, idx) => (
-          <View style={styles.tRow} key={it.id}>
-            <Text style={[styles.tCell, styles.cItem]}>{idx + 1}</Text>
-            <Text style={[styles.tCell, styles.cDesc]}>{it.description}</Text>
-            <Text style={[styles.tCell, styles.cUnit]}>{toNum(it.quantity)}</Text>
-            <Text style={[styles.tCell, styles.cPrice]}>{formatCLP(toNum(it.unitPrice))}</Text>
-            <Text style={[styles.tCell, styles.cTotal, styles.tCellLast]}>
-              {formatCLP(toNum(it.total))}
-            </Text>
-          </View>
-        ))}
-        {items.length === 0 ? (
-          <View style={styles.tRow}>
-            <Text style={[styles.tCell, { width: "100%" }]}>—</Text>
-          </View>
-        ) : null}
-        <View style={styles.totalRow}>
-          <Text style={{ fontWeight: 700, marginRight: 8 }}>{totalsLabel}</Text>
-          <Text style={{ fontWeight: 700 }}>{formatCLP(totalsValue)}</Text>
-        </View>
+      <View style={styles.tableHeader}>
+        <Text style={styles.itemCol}>Item</Text>
+        <Text style={styles.descCol}>Descripcion</Text>
+        <Text style={styles.unitCol}>Unidad</Text>
+        <Text style={styles.priceCol}>P.Unitario</Text>
+        <Text style={styles.totalCol}>Total</Text>
       </View>
+      {items.map((item, index) => (
+        <View style={styles.row} key={item.id}>
+          <Text style={styles.itemCol}>{index + 1}</Text>
+          <Text style={styles.descCol}>{item.description}</Text>
+          <Text style={styles.unitCol}>{formatQuantity(toNum(item.quantity))}</Text>
+          <Text style={styles.priceCol}>{formatNumber(toNum(item.unitPrice))}</Text>
+          <Text style={styles.totalCol}>{formatNumber(toNum(item.total))}</Text>
+        </View>
+      ))}
+      <View style={styles.sectionTotal}>
+        <Text style={styles.sectionTotalLabel}>Total</Text>
+        <Text style={styles.sectionTotalValue}>{total > 0 ? formatNumber(total) : ""}</Text>
+      </View>
+    </View>
+  );
+}
+
+function SummaryRow({ item, description, total }: { item: number; description: string; total?: number }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryItemCol}>{item}</Text>
+      <Text style={styles.summaryDescCol}>{description}</Text>
+      <Text style={styles.summaryTotalCol}>{total && total > 0 ? formatNumber(total) : ""}</Text>
     </View>
   );
 }
 
 export function QuotationPdf({ quotation, logoSrc }: Props) {
   const items = quotation.items ?? [];
-  const materials = items.filter((i) => i.type === "MATERIAL");
-  const works = items.filter((i) => i.type === "WORK");
+  const materials = items.filter((item) => item.type === "MATERIAL");
+  const works = items.filter((item) => item.type === "WORK");
 
-  const materialsTotal = materials.reduce((acc, i) => acc + toNum(i.total), 0);
-  const worksTotal = works.reduce((acc, i) => acc + toNum(i.total), 0);
+  const materialsTotal = materials.reduce((acc, item) => acc + toNum(item.total), 0);
+  const worksTotal = works.reduce((acc, item) => acc + toNum(item.total), 0);
 
   const subtotal = toNum(quotation.subtotal);
   const tax = toNum(quotation.tax);
@@ -329,135 +383,105 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
     discountAmount = discount;
     discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
   }
-  const neto = Math.max(subtotal - discountAmount, 0);
 
-  const cotizo = quotation.createdBy?.name?.trim() || "—";
+  const neto = Math.max(subtotal - discountAmount, 0);
+  const cotizo = quotation.createdBy?.name?.trim() || "";
 
   return (
-    <Document
-      title={`Cotizacion ${quotation.number}`}
-      author={COMPANY.name}
-      subject={`Cotizacion ${quotation.number}`}
-    >
+    <Document title={`Cotizacion ${quotation.number}`} author={COMPANY.name} subject={`Cotizacion ${quotation.number}`}>
       <Page size="A4" style={styles.page}>
-        {/* HEADER */}
-        <View style={styles.headerRow}>
-          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
-          <View style={styles.headerRight}>
+        <View style={styles.header} fixed>
+          <View style={styles.logoWrap}>{logoSrc ? <Image src={logoSrc} style={styles.logo} alt="Logo Metalurgica Ñuble" /> : null}</View>
+          <View style={styles.headerCenter}>
             <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
-            <Text style={styles.companyLine}>{COMPANY.address}</Text>
+            <Text style={styles.companyLine}>{COMPANY.address} {COMPANY.city}</Text>
             <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
             <Text style={styles.companyLine}>GIRO: {COMPANY.giro}</Text>
             <Text style={styles.companyLine}>FONO: {COMPANY.phone}</Text>
             <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
           </View>
+          <Text style={styles.pageNumber} render={({ pageNumber }) => `Pagina    ${pageNumber}`} fixed />
         </View>
 
-        {/* CLIENT + FECHA */}
-        <View style={styles.clientRow}>
+        <View style={styles.clientDateRow}>
           <View style={styles.clientBlock}>
-            <Text style={styles.clientLine}>Cliente: {quotation.client?.name ?? "—"}</Text>
-            <Text style={styles.clientLine}>Rut: {quotation.client?.code ?? "—"}</Text>
-            <Text style={styles.clientLine}>Direccion: {quotation.client?.address ?? "—"}</Text>
-            <Text style={styles.clientLine}>Ciudad: {quotation.client?.city ?? ""}</Text>
-            <Text style={styles.clientLine}>Atencion: {quotation.atencion || "—"}</Text>
-            <Text style={styles.clientLine}>Area: {quotation.area || "—"}</Text>
+            <FieldRow label="Cliente" value={quotation.client?.name} boldValue />
+            <FieldRow label="Rut" value={quotation.client?.code} boldValue />
+            <FieldRow label="Direccion" value={quotation.client?.address} />
+            <FieldRow label="Ciudad" value={quotation.client?.city} />
+            <FieldRow label="Atencion" value={quotation.atencion} boldValue />
+            <FieldRow label="Area" value={quotation.area} />
           </View>
-          <View>
-            <Text style={styles.fecha}>Fecha: {formatDate(quotation.createdAt)}</Text>
-          </View>
-        </View>
-
-        {/* DESCRIPCION TRABAJO */}
-        <Text style={styles.descripcionLine}>
-          Descripcion Trabajo: {quotation.descripcionTrabajo || "—"}
-        </Text>
-
-        {/* SECTION I — MATERIALES */}
-        {materials.length > 0 && (
-          <ItemsTable
-            items={materials}
-            totalsLabel={`Total ${materials.length}`}
-            totalsValue={materialsTotal}
-          />
-        )}
-
-        {/* SECTION II — TRABAJOS */}
-        {works.length > 0 && (
-          <ItemsTable
-            items={works}
-            totalsLabel={`Total ${works.length}`}
-            totalsValue={worksTotal}
-          />
-        )}
-
-        {/* SECTION IV — RESUMEN GENERAL */}
-        <View style={{ marginTop: 10 }}>
-          <SectionHeader title="IV. RESUMEN GENERAL" />
-          <View style={styles.table}>
-            <View style={styles.tRow}>
-              <Text style={[styles.tCell, styles.cLabel]}>Detalle de Materiales</Text>
-              <Text style={[styles.tCell, styles.cValue, styles.tCellLast]}>
-                {materialsTotal > 0 ? formatCLP(materialsTotal) : ""}
-              </Text>
-            </View>
-            <View style={styles.tRow}>
-              <Text style={[styles.tCell, styles.cLabel]}>Detalle de Trabajos Realizados</Text>
-              <Text style={[styles.tCell, styles.cValue, styles.tCellLast]}>
-                {worksTotal > 0 ? formatCLP(worksTotal) : ""}
-              </Text>
-            </View>
-            <View style={styles.tRow}>
-              <Text style={[styles.tCell, styles.cLabel]}>Mano de Obra</Text>
-              <Text style={[styles.tCell, styles.cValue, styles.tCellLast]}></Text>
-            </View>
-            <View style={styles.tRow}>
-              <Text style={[styles.tCell, styles.cLabel]}>G.G. y Utilidades</Text>
-              <Text style={[styles.tCell, styles.cValue, styles.tCellLast]}></Text>
-            </View>
+          <View style={styles.dateBlock}>
+            <Text style={styles.dateLabel}>Fecha</Text>
+            <Text>{formatDate(quotation.createdAt)}</Text>
           </View>
         </View>
 
-        {/* Right-aligned summary block */}
-        <View style={styles.resumenRow}>
-          <View style={styles.resumenTable}></View>
-          <View style={styles.resumenRight}>
-            <View style={styles.resumenLine}>
-              <Text>Sub-Total Neto:</Text>
-              <Text>{formatCLP(subtotal)}</Text>
-            </View>
-            {discountAmount > 0 && (
-              <View style={styles.resumenLine}>
-                <Text>(-) Descuento {discountPercent}%:</Text>
-                <Text>{formatCLP(discountAmount)}</Text>
-              </View>
-            )}
-            <View style={styles.resumenLine}>
-              <Text>Neto:</Text>
-              <Text>{formatCLP(neto)}</Text>
-            </View>
-            <View style={styles.resumenLine}>
-              <Text>Iva:</Text>
-              <Text>{formatCLP(tax)}</Text>
-            </View>
-            <View style={styles.resumenTotal}>
-              <Text>Total:</Text>
-              <Text>{formatCLP(total)}</Text>
-            </View>
+        <View style={styles.description}>
+          <Text style={styles.descriptionLabel}>Descripcion Trabajo:</Text>
+          <Text style={styles.bold}> {quotation.descripcionTrabajo || ""}</Text>
+        </View>
+
+        <SectionTitle>I. DETALLE DE MATERIALES</SectionTitle>
+        <ItemsTable items={materials} total={materialsTotal} />
+
+        <SectionTitle>II. DETALLE DE TRABAJOS REALIZADOS</SectionTitle>
+        <ItemsTable items={works} total={worksTotal} />
+
+        <SectionTitle>IV. RESUMEN GENERAL</SectionTitle>
+        <View style={styles.summaryTable}>
+          <View style={styles.summaryHeader}>
+            <Text style={styles.itemCol}>Item</Text>
+            <Text style={styles.summaryDescCol}>Descripcion</Text>
+            <Text style={styles.summaryTotalCol}>Total</Text>
+          </View>
+          <SummaryRow item={1} description="Detalle de Materiales" total={materialsTotal} />
+          <SummaryRow item={2} description="Detalle de Trabajos Realizados" total={worksTotal} />
+          <SummaryRow item={3} description="Mano de Obra" />
+          <SummaryRow item={4} description="G.G. y Utilidades" />
+        </View>
+
+        <View style={styles.totalsBlock}>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Sub-Total Neto</Text>
+            <Text style={styles.totalsValue}>{formatNumber(subtotal)}</Text>
+            <Text style={styles.totalsPercent}></Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>(-) Descuento</Text>
+            <Text style={styles.totalsValue}>{discountAmount > 0 ? formatNumber(discountAmount) : ""}</Text>
+            <Text style={styles.totalsPercent}>{discountPercent > 0 ? `${discountPercent}%` : "%"}</Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Neto</Text>
+            <Text style={styles.totalsValue}>{formatNumber(neto)}</Text>
+            <Text style={styles.totalsPercent}></Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Iva</Text>
+            <Text style={styles.totalsValue}>{formatNumber(tax)}</Text>
+            <Text style={styles.totalsPercent}></Text>
+          </View>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Total</Text>
+            <Text style={styles.totalsValue}>{formatNumber(total)}</Text>
+            <Text style={styles.totalsPercent}></Text>
           </View>
         </View>
 
-        {/* FOOTER (fixed at bottom) */}
-        <View style={styles.footerFixed} fixed>
+        <View style={styles.footer} fixed>
           <View style={styles.footerLeft}>
-            <Text>Plazo de Entrega: {quotation.plazoEntrega || "—"}</Text>
+            <Text>Plazo de Entrega: {quotation.plazoEntrega || ""}</Text>
             <Text>Validez Oferta: {formatDate(quotation.validUntil)}</Text>
             <Text>Cotizo: {cotizo}</Text>
           </View>
-          <View style={styles.footerRight}>
-            <View style={styles.firmaLine} />
-            <Text style={styles.firmaText}>Firma Prestador de Servicio</Text>
+          <View style={styles.stamp}>
+            <Text style={styles.stampText}>Soc. Metalurgica Ñuble Ltda.</Text>
+            <Text style={styles.stampText}>RUT: {COMPANY.rut}</Text>
+            <Text style={styles.stampText}>{COMPANY.address}</Text>
+            <Text style={styles.stampText}>FONO: {COMPANY.phone} / {COMPANY.city}</Text>
           </View>
         </View>
       </Page>
