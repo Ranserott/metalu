@@ -1,3 +1,5 @@
+import { UserCog } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getUsers } from "@/modules/users/services/userService";
 import { getRoles } from "@/modules/roles/services/roleService";
 import { UserTable } from "@/components/users/UserTable";
@@ -11,18 +13,19 @@ export default async function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Usuarios</h1>
-          <p className="text-sm text-gray-500">Gestión de usuarios y roles</p>
-        </div>
-        <Link
-          href="/users/new"
-          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-8 gap-1.5 px-2.5 hover:bg-primary/80 transition-colors"
-        >
-          Crear Usuario
-        </Link>
-      </div>
+      <PageHeader
+        icon={UserCog}
+        title="Usuarios"
+        description="Gestión de usuarios y roles"
+        actions={
+          <Link
+            href="/users/new"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-white text-[var(--theme-dark)] text-sm font-medium h-8 gap-1.5 px-3 hover:bg-white/90 transition-colors"
+          >
+            Crear Usuario
+          </Link>
+        }
+      />
 
       <UserTable
         data={users.map((u: PrismaUserWithRoles) => ({
