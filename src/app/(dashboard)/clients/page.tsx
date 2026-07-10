@@ -1,3 +1,5 @@
+import { Users } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getClients } from "@/modules/clients/services/clientService";
 import { ClientTable } from "@/modules/clients/components/ClientTable";
 
@@ -6,12 +8,11 @@ export default async function ClientsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Clientes</h1>
-          <p className="text-sm text-gray-500">Gestion de clientes</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={Users}
+        title="Clientes"
+        description="Gestión de clientes"
+      />
 
       <ClientTable data={clients} />
     </div>
