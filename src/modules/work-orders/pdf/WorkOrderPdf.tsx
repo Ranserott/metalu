@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   box: {
-    border: 1,
+    border: 2,
     borderColor: "#111",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   boxHeaderRow: {
     flexDirection: "row",
@@ -150,47 +150,43 @@ const styles = StyleSheet.create({
   },
   boxFieldRow: {
     flexDirection: "row",
-    borderBottom: 1,
-    borderColor: "#111",
-    minHeight: 18,
+    borderBottom: 0,
+    minHeight: 13,
   },
   boxFieldRowLast: {
     borderBottom: 0,
   },
   boxLabelCell: {
     width: "20%",
-    paddingVertical: 3,
+    paddingVertical: 1,
     paddingHorizontal: 6,
     fontSize: 10,
     fontWeight: 700,
-    borderRight: 1,
-    borderColor: "#111",
+    borderRight: 0,
   },
   boxValueCell: {
     width: "30%",
-    paddingVertical: 3,
+    paddingVertical: 1,
     paddingHorizontal: 6,
     fontSize: 10,
-    borderRight: 1,
-    borderColor: "#111",
+    borderRight: 0,
   },
   boxValueCellLast: {
     borderRight: 0,
   },
   entregadoBox: {
-    border: 1,
+    border: 2,
     borderColor: "#111",
     marginBottom: 8,
   },
   sectionBar: {
-    backgroundColor: "#e6e6e6",
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    marginTop: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 0,
+    marginTop: 8,
     marginBottom: 0,
   },
   sectionBarText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 700,
   },
   table: {
@@ -379,11 +375,9 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
         <View style={styles.entregadoBox}>
           <View style={styles.boxFieldRow}>
             <Text style={styles.boxLabelCell}>Entregado por:</Text>
-            <Text style={[styles.boxValueCell, styles.boxValueCellLast]}>
+            <Text style={{ flex: 1, paddingVertical: 1, paddingHorizontal: 6, fontSize: 10 }}>
               {workOrder.entregadoPor || "—"}
             </Text>
-            <Text style={styles.boxLabelCell}> </Text>
-            <Text style={styles.boxValueCellLast}> </Text>
           </View>
         </View>
 
