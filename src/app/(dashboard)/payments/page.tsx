@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { CreditCard } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { PaymentAccordion } from "@/modules/payments/components/PaymentAccordion";
 import { PaymentTable } from "@/modules/payments/components/PaymentTable";
 import { SupplierDocumentInput } from "@/modules/payments/validations/paymentSchemas";
@@ -48,12 +50,11 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Pagos</h1>
-          <p className="text-sm text-gray-500">Accounts Payable — Documentos de Proveedores</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={CreditCard}
+        title="Pagos"
+        description="Accounts Payable — Documentos de Proveedores"
+      />
 
       <PaymentAccordion
         onSuccess={fetchDocuments}
