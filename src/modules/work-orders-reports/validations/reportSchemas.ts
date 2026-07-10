@@ -13,7 +13,7 @@ export const workOrderReportFiltersSchema = z.object({
   nroOrdenCompra: z.string().optional(),
   status: z.string().optional(),
   description: z.string().optional(),
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
   number: z.string().optional(),
 });

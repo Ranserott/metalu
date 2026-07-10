@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkOrderTable } from "@/modules/work-orders/components/WorkOrderTable";
@@ -11,6 +12,7 @@ import { WorkOrder } from "@/modules/work-orders/types/workOrder";
 import { WorkOrderItemInput } from "@/modules/work-orders/validations/workOrderSchemas";
 
 export default function WorkOrdersPage() {
+  const router = useRouter();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -141,10 +143,20 @@ export default function WorkOrdersPage() {
           <h1 className="text-2xl font-bold">Trabajos</h1>
           <p className="text-sm text-gray-500">Gestión de trabajos y órdenes de trabajo</p>
         </div>
-        <Button onClick={handleNew} className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)]">
-          <Plus className="w-4 h-4 mr-2" />
-          Agregar Trabajo
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => router.push("/work-orders/reports")}
+            variant="outline"
+            className="border-[var(--theme-primary)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Informes
+          </Button>
+          <Button onClick={handleNew} className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)]">
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Trabajo
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
