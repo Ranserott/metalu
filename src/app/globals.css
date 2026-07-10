@@ -85,6 +85,12 @@
   --sidebar-ring: #4FB5E0;
   --header: #004C63;
   --sidebar-dark: #101D2D;
+
+  /* Brand palette used by var(--theme-*) references across the app */
+  --theme-primary: #14679C;
+  --theme-dark: #004C63;
+  --theme-darker: #101D2D;
+  --theme-light: #4FB5E0;
 }
 
 .dark {
@@ -121,6 +127,12 @@
   --sidebar-ring: #4FB5E0;
   --header: #004C63;
   --sidebar-dark: #101D2D;
+
+  /* Brand palette used by var(--theme-*) references across the app */
+  --theme-primary: #14679C;
+  --theme-dark: #004C63;
+  --theme-darker: #101D2D;
+  --theme-light: #4FB5E0;
 }
 
 @layer base {
