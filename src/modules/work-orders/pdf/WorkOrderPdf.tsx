@@ -160,9 +160,9 @@ const styles = StyleSheet.create({
   boxLabelCell: {
     flexGrow: 0,
     flexShrink: 0,
-    flexBasis: 60,
+    flexBasis: 110,
     paddingVertical: 1,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontSize: 10,
     fontWeight: 700,
   },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexBasis: 0,
     paddingVertical: 1,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontSize: 10,
   },
   boxValueCellLast: {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexBasis: 0,
     paddingVertical: 1,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontSize: 10,
   },
   entregadoBox: {
