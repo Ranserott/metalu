@@ -36,7 +36,7 @@ export function ReportFilters({
   onToChange,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-md border bg-gray-50/50 p-4">
+    <div className="flex flex-wrap items-end gap-4 rounded-md border border-t-4 border-t-[var(--theme-primary)] bg-[var(--theme-primary-tint)] p-4 shadow-sm">
       <div className="flex flex-col gap-1 min-w-60">
         <Label className="text-xs">
           Cliente {clientRequired && <span className="text-red-600">*</span>}
