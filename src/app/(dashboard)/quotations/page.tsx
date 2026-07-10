@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -115,16 +116,17 @@ export default function QuotationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Cotizaciones</h1>
-          <p className="text-sm text-gray-500">Gestión de cotizaciones</p>
-        </div>
-        <Button onClick={handleNew} className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)]">
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Cotización
-        </Button>
-      </div>
+      <PageHeader
+        icon={FileText}
+        title="Cotizaciones"
+        description="Gestión de cotizaciones"
+        actions={
+          <Button onClick={handleNew} className="bg-white text-[var(--theme-dark)] hover:bg-white/90">
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Cotización
+          </Button>
+        }
+      />
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
         <QuotationTable
