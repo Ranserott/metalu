@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, BarChart3 } from "lucide-react";
+import { Plus, BarChart3, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { WorkOrderTable } from "@/modules/work-orders/components/WorkOrderTable";
 import { WorkOrderForm } from "@/modules/work-orders/components/WorkOrderForm";
 import { WorkOrderDetailView } from "@/modules/work-orders/components/WorkOrderDetailView";
@@ -138,26 +139,30 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Trabajos</h1>
-          <p className="text-sm text-gray-500">Gestión de trabajos y órdenes de trabajo</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => router.push("/work-orders/reports")}
-            variant="outline"
-            className="border-[var(--theme-primary)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Informes
-          </Button>
-          <Button onClick={handleNew} className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)]">
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Trabajo
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Wrench}
+        title="Trabajos"
+        description="Gestión de trabajos y órdenes de trabajo"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              onClick={() => router.push("/work-orders/reports")}
+              variant="outline"
+              className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Informes
+            </Button>
+            <Button
+              onClick={handleNew}
+              className="bg-white text-[var(--theme-dark)] hover:bg-white/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Trabajo
+            </Button>
+          </div>
+        }
+      />
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
         <WorkOrderTable
