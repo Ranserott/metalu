@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Truck } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { SupplierAccordion } from "@/modules/suppliers/components/SupplierAccordion";
 import { SupplierTable } from "@/modules/suppliers/components/SupplierTable";
 import { SupplierInput } from "@/modules/suppliers/validations/supplierSchemas";
@@ -39,12 +41,11 @@ export default function SuppliersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Proveedores</h1>
-          <p className="text-sm text-gray-500">Gestión de proveedores</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={Truck}
+        title="Proveedores"
+        description="Gestión de proveedores"
+      />
 
       <SupplierAccordion
         onSuccess={fetchSuppliers}
