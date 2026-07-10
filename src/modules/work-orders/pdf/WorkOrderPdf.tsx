@@ -1,18 +1,10 @@
 import React from "react";
-import { join } from "path";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
 
 // Monospace "Courier" is a built-in PDF font in @react-pdf/renderer — no
 // registration needed. Matches the maqueta layout (Solicitud OT.pdf).
 const MONO_FONT = "Courier";
-
-/**
- * @react-pdf/renderer runs server-side in plain Node. It does NOT resolve
- * Next.js public paths (`/logo.svg`). For PDF rendering, resolve the logo to
- * an absolute filesystem path inside /public.
- */
-const LOGO_ABS_PATH = join(process.cwd(), "public", "logo.svg");
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -95,6 +87,8 @@ type Props = {
     [k: string]: any;
   };
   users?: Array<{ id: string; name: string | null }>;
+  /** Data-URI logo (resolved in the route via getLogoDataUri). Null if logo file missing. */
+  logoSrc?: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -287,7 +281,7 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-export function WorkOrderPdf({ workOrder, users = [] }: Props) {
+export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
   const items = workOrder.materials ?? [];
   const itemsTotal = items.reduce((acc, i) => acc + toNum(i.total), 0);
 
@@ -318,7 +312,7 @@ export function WorkOrderPdf({ workOrder, users = [] }: Props) {
       <Page size="A4" style={styles.page}>
         {/* HEADER */}
         <View style={styles.headerRow}>
-          <Image src={LOGO_ABS_PATH} style={styles.logo} />
+          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
           <View style={styles.headerRight}>
             <Text style={styles.title}>TRABAJO N°{workOrder.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>

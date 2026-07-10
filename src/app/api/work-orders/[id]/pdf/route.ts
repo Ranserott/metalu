@@ -3,11 +3,15 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma/prisma";
 import { getWorkOrderById } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderPdf } from "@/modules/work-orders/pdf/WorkOrderPdf";
+import { getLogoDataUri } from "@/lib/pdf/logo";
 import { pdf } from "@react-pdf/renderer";
 import { createElement } from "react";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Vercel default for Hobby is 10s. PDF render + Prisma lookups can exceed that,
+// so allow up to 60s on Pro.
+export const maxDuration = 60;
 
 /**
  * GET /api/work-orders/[id]/pdf
@@ -45,8 +49,16 @@ export async function GET(
       return NextResponse.json({ error: "Work order not found" }, { status: 404 });
     }
 
+    // Read the logo once (cached after first success) and pass as a data URI.
+    // Returns null if public/logo.svg is missing on the current environment.
+    const logoSrc = getLogoDataUri();
+
     const buffer = await pdf(
-      createElement(WorkOrderPdf, { workOrder, users }) as Parameters<typeof pdf>[0]
+      createElement(WorkOrderPdf, {
+        workOrder,
+        users,
+        logoSrc,
+      }) as Parameters<typeof pdf>[0]
     ).toBuffer();
 
     const filename = `Trabajo-${workOrder.number}.pdf`;
@@ -57,7 +69,8 @@ export async function GET(
     // browser was getting a 0-byte download.
     console.log(
       `[pdf] workOrder=${workOrder.number} buffer.length=${buffer.length} ` +
-      `byteOffset=${buffer.byteOffset} byteLength=${buffer.byteLength}`
+      `byteOffset=${buffer.byteOffset} byteLength=${buffer.byteLength} ` +
+      `logo=${logoSrc ? "yes" : "no"}`
     );
 
     return new NextResponse(buffer, {

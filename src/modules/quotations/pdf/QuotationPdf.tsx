@@ -1,17 +1,9 @@
 import React from "react";
-import { join } from "path";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
 import { registerPdfFonts, PDF_FONT_FAMILY } from "@/lib/pdf/fonts";
 
 registerPdfFonts();
-
-/**
- * @react-pdf/renderer runs server-side in plain Node. It does NOT resolve
- * Next.js public paths (`/logo.svg`). For PDF rendering, resolve the logo to
- * an absolute filesystem path inside /public.
- */
-const LOGO_ABS_PATH = join(process.cwd(), "public", "logo.svg");
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -87,6 +79,8 @@ type Props = {
     validUntil: Date | string;
     [k: string]: any;
   };
+  /** Data-URI logo (resolved in the route via getLogoDataUri). Null if logo file missing. */
+  logoSrc?: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -312,7 +306,7 @@ function ItemsTable({
   );
 }
 
-export function QuotationPdf({ quotation }: Props) {
+export function QuotationPdf({ quotation, logoSrc }: Props) {
   const items = quotation.items ?? [];
   const materials = items.filter((i) => i.type === "MATERIAL");
   const works = items.filter((i) => i.type === "WORK");
@@ -348,7 +342,7 @@ export function QuotationPdf({ quotation }: Props) {
       <Page size="A4" style={styles.page}>
         {/* HEADER */}
         <View style={styles.headerRow}>
-          <Image src={LOGO_ABS_PATH} style={styles.logo} />
+          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
           <View style={styles.headerRight}>
             <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
