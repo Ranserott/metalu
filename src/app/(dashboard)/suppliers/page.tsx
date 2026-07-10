@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Truck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Truck, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SupplierAccordion } from "@/modules/suppliers/components/SupplierAccordion";
 import { SupplierTable } from "@/modules/suppliers/components/SupplierTable";
@@ -11,6 +13,7 @@ import { Supplier } from "@/modules/suppliers/types/supplier";
 console.log(">>> SuppliersPage rendering");
 
 export default function SuppliersPage() {
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editData, setEditData] = useState<SupplierInput & { id: string } | undefined>();
 
@@ -45,6 +48,16 @@ export default function SuppliersPage() {
         icon={Truck}
         title="Proveedores"
         description="Gestión de proveedores"
+        actions={
+          <Button
+            onClick={() => router.push("/suppliers/reports")}
+            variant="outline"
+            className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Informes
+          </Button>
+        }
       />
 
       <SupplierAccordion

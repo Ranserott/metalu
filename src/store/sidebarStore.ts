@@ -15,7 +15,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Órdenes de Trabajo", href: "/work-orders", icon: "Wrench" },
   { label: "Compras", href: "/purchases", icon: "ShoppingCart" },
   { label: "Proveedores", href: "/suppliers", icon: "Truck", roles: ["Admin", "Manager", "Production"] },
-  { label: "Reportes de proveedores", href: "/suppliers/reports", icon: "BarChart3", roles: ["Admin", "Manager", "Production"] },
   { label: "Facturación", href: "/billing", icon: "Receipt", roles: ["Admin", "Manager", "Sales", "Accounting"] },
   { label: "Pagos", href: "/payments", icon: "CreditCard", roles: ["Admin", "Manager", "Accounting"] },
   { label: "Informes", href: "/reports", icon: "BarChart3" },
