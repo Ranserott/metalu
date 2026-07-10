@@ -1,7 +1,8 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, ShoppingCart } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getPurchases } from "@/modules/purchases/services/purchaseService";
 import { getSolicitudes } from "@/modules/solicitudes/services/solicitudService";
 import { PurchaseTable } from "@/modules/purchases/components/PurchaseTable";
@@ -15,18 +16,19 @@ export default async function PurchasesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Compras</h1>
-          <p className="text-sm text-muted-foreground">Gestión de órdenes de compra</p>
-        </div>
-        <Link href="/purchases/solicitudes/new">
-          <Button className="bg-[#14679C] hover:bg-[#14679C]/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva orden de compra
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        icon={ShoppingCart}
+        title="Compras"
+        description="Gestión de órdenes de compra"
+        actions={
+          <Link href="/purchases/solicitudes/new">
+            <Button className="bg-white text-[var(--theme-dark)] hover:bg-white/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva orden de compra
+            </Button>
+          </Link>
+        }
+      />
 
       <Tabs defaultValue="emitidas">
         <TabsList>
