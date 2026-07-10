@@ -1,0 +1,172 @@
+"use client";
+
+import { Loader2 } from "lucide-react";
+import { EmptyReportState } from "../EmptyReportState";
+import type {
+  ByClientGroup,
+  ByClientTotals,
+} from "../../types/report";
+
+type Props = {
+  groups: ByClientGroup[];
+  totals?: ByClientTotals;
+  loading: boolean;
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  TODO: "Pendiente",
+  IN_PROGRESS: "En progreso",
+  QUALITY_CHECK: "Control de calidad",
+  COMPLETED: "Completado",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  TODO: "bg-gray-100 text-gray-800",
+  IN_PROGRESS: "bg-blue-100 text-blue-800",
+  QUALITY_CHECK: "bg-yellow-100 text-yellow-800",
+  COMPLETED: "bg-green-100 text-green-800",
+};
+
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+function fmtDate(d: Date | string | null): string {
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toLocaleDateString("es-CL");
+}
+
+export function ByClientTab({ groups, totals, loading }: Props) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-gray-500">
+        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+        Cargando...
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return <EmptyReportState message="No hay trabajos que coincidan con los filtros" />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <section
+          key={group.clientId}
+          className="border rounded-lg overflow-hidden shadow-sm bg-white"
+        >
+          <header className="flex items-center justify-between bg-gradient-to-r from-[var(--theme-primary)]/10 to-transparent px-4 py-2 border-b">
+            <div className="flex items-baseline gap-3">
+              <h3 className="font-bold text-[var(--theme-dark)]">
+                {group.clientName}
+              </h3>
+              <span className="text-xs text-gray-500 font-mono">
+                {group.clientCode}
+              </span>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500">Σ </span>
+              <span className="font-bold text-blue-700">
+                {clp.format(group.groupTotal)}
+              </span>
+              <span className="text-gray-500 ml-2">
+                ({group.rows.length}{" "}
+                {group.rows.length === 1 ? "trabajo" : "trabajos"})
+              </span>
+            </div>
+          </header>
+
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  OT
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Fecha Trab.
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Local
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Encargado
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Factura
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Guía
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  OC
+                </th>
+                <th className="text-left p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Estado
+                </th>
+                <th className="text-right p-2 font-semibold text-gray-600 uppercase text-xs tracking-wide">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-t hover:bg-blue-50/40 transition-colors"
+                >
+                  <td className="p-2 font-semibold text-gray-800">{row.number}</td>
+                  <td className="p-2 text-gray-700">{fmtDate(row.fechaTrabajo)}</td>
+                  <td className="p-2 text-gray-700">{row.local ?? "—"}</td>
+                  <td className="p-2 text-gray-700">
+                    {row.encargadoNombre ?? "—"}
+                  </td>
+                  <td className="p-2 text-gray-700">{row.nroFactura ?? "—"}</td>
+                  <td className="p-2 text-gray-700">{row.nroGuia ?? "—"}</td>
+                  <td className="p-2 text-gray-700">
+                    {row.nroOrdenCompra ?? "—"}
+                  </td>
+                  <td className="p-2">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                        STATUS_BADGE[row.status] ?? "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {STATUS_LABELS[row.status] ?? row.status}
+                    </span>
+                  </td>
+                  <td className="p-2 text-right font-semibold text-[var(--theme-dark)]">
+                    {clp.format(row.total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))}
+
+      {totals && groups.length > 0 && (
+        <div className="flex justify-end gap-6 rounded-md border bg-gray-50 px-4 py-3 text-sm">
+          <div>
+            <span className="text-gray-500">Σ Total: </span>
+            <span className="font-bold text-blue-700">
+              {clp.format(totals.totalAmount)}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-500">Trabajos: </span>
+            <span className="font-semibold">{totals.count}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Clientes: </span>
+            <span className="font-semibold">{groups.length}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
