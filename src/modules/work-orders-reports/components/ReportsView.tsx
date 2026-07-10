@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { BarChart3 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { WorkOrderReportFilters } from "./WorkOrderReportFilters";
 import { ByClientTab } from "./tabs/ByClientTab";
 import { ByWorkOrderTab } from "./tabs/ByWorkOrderTab";
@@ -107,14 +109,11 @@ export function ReportsView({ clients, locales, encargados }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Informes de trabajos</h1>
-          <p className="text-sm text-gray-500">
-            Listado de trabajos por cliente o por filtros generales
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        title="Informes de trabajos"
+        description="Listado de trabajos por cliente o por filtros generales"
+      />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
