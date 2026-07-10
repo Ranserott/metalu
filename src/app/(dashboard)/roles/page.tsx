@@ -1,3 +1,5 @@
+import { Shield } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { getRoles } from "@/modules/roles/services/roleService";
 import { RoleTable } from "@/modules/roles/components/RoleTable";
 
@@ -6,12 +8,11 @@ export default async function RolesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Roles</h1>
-          <p className="text-sm text-gray-500">Gestion de roles</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={Shield}
+        title="Roles"
+        description="Gestión de roles"
+      />
 
       <RoleTable data={roles} />
     </div>
