@@ -16,6 +16,11 @@ function formatCLP(n: number): string {
   return clp.format(Number.isFinite(n) ? n : 0);
 }
 
+function formatQuantity(n: number): string {
+  const num = Number.isFinite(n) ? n : 0;
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
+}
+
 function formatDate(d: Date | string | null | undefined): string {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
@@ -196,6 +201,13 @@ const styles = StyleSheet.create({
     borderColor: "#111",
     minHeight: 18,
   },
+  tableHeaderRow: {
+    backgroundColor: "#e8e8e8",
+  },
+  tableHeaderCell: {
+    fontWeight: 700,
+    fontSize: 10,
+  },
   tCell: {
     paddingVertical: 3,
     paddingHorizontal: 4,
@@ -272,14 +284,6 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
 });
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <View style={styles.sectionBar} fixed>
-      <Text style={styles.sectionBarText}>{title}</Text>
-    </View>
-  );
-}
 
 export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
   const items = workOrder.materials ?? [];
@@ -389,8 +393,18 @@ export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
         </View>
 
         {/* ITEMS TABLE */}
-        <SectionHeader title="CANT | DETALLE | P. UNITARIO | TOTAL" />
         <View style={styles.table}>
+          {/* Header row — aligned with column widths */}
+          <View style={[styles.tRow, styles.tableHeaderRow]}>
+            <Text style={[styles.tCell, styles.cItem, styles.tableHeaderCell]}>CANT</Text>
+            <Text style={[styles.tCell, styles.cDet, styles.tableHeaderCell]}>DETALLE</Text>
+            <Text style={[styles.tCell, styles.cPrice, styles.tableHeaderCell, { textAlign: "right" }]}>
+              P. UNITARIO
+            </Text>
+            <Text style={[styles.tCell, styles.cTotal, styles.tCellLast, styles.tableHeaderCell, { textAlign: "right" }]}>
+              TOTAL
+            </Text>
+          </View>
           {items.length === 0 ? (
             <View style={styles.tRow}>
               <Text style={[styles.tCell, { width: "100%" }]}>—</Text>
@@ -398,7 +412,7 @@ export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
           ) : (
             items.map((it, idx) => (
               <View style={styles.tRow} key={it.id ?? idx}>
-                <Text style={[styles.tCell, styles.cItem]}>{idx + 1}</Text>
+                <Text style={[styles.tCell, styles.cItem]}>{formatQuantity(toNum(it.quantity))}</Text>
                 <Text style={[styles.tCell, styles.cDet]}>{it.material}</Text>
                 <Text style={[styles.tCell, styles.cPrice]}>
                   {formatCLP(toNum(it.unitPrice))}
