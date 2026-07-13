@@ -30,8 +30,7 @@ import {
   LogOut,
   Search,
   Plus,
-  Upload,
-  FileText,
+  X,
 } from "lucide-react";
 
 const clp = new Intl.NumberFormat("es-CL", {
@@ -64,22 +63,12 @@ type GuiaRow = {
 
 type ClientOpt = { id: string; name: string; code: string };
 
-const MAX_ITEMS = 10;
-const MAX_GUIAS = 10;
-
 function emptyItems(): ItemRow[] {
-  return Array.from({ length: MAX_ITEMS }, () => ({
-    description: "",
-    quantity: 0,
-    unitPrice: 0,
-  }));
+  return [{ description: "", quantity: 0, unitPrice: 0 }];
 }
 
 function emptyGuias(): GuiaRow[] {
-  return Array.from({ length: MAX_GUIAS }, () => ({
-    numero: "",
-    total: 0,
-  }));
+  return [{ numero: "", total: 0 }];
 }
 
 export function InvoiceForm({
@@ -163,6 +152,22 @@ export function InvoiceForm({
       next[idx] = { ...next[idx], ...patch };
       return next;
     });
+  }
+
+  function addGuia() {
+    setGuias((prev) => [...prev, { numero: "", total: 0 }]);
+  }
+
+  function removeGuia(idx: number) {
+    setGuias((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+  }
+
+  function addItem() {
+    setItems((prev) => [...prev, { description: "", quantity: 0, unitPrice: 0 }]);
+  }
+
+  function removeItem(idx: number) {
+    setItems((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
   }
 
   // ---- Lifecycle handlers ----
@@ -480,17 +485,8 @@ export function InvoiceForm({
                 size="icon-sm"
                 variant="ghost"
                 className="text-white hover:bg-white/20"
-                onClick={() => {
-                  // "+" agrega una fila editable nueva (ya hay 10 filas)
-                  // dejamos el comportamiento como "agregar foco a la primera fila vacía"
-                  const firstEmpty = guias.findIndex((g) => g.numero.trim() === "");
-                  if (firstEmpty === -1) {
-                        setError("Máximo 10 guías asociadas");
-                        return;
-                      }
-                  const el = document.getElementById(`guia-numero-${firstEmpty}`);
-                  el?.focus();
-                }}
+                onClick={addGuia}
+                title="Agregar guía"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -503,6 +499,7 @@ export function InvoiceForm({
                       <th className="px-2 py-1 w-8">#</th>
                       <th className="px-2 py-1">NÚMERO</th>
                       <th className="px-2 py-1 w-24 text-right">TOTAL</th>
+                      <th className="px-2 py-1 w-8"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -535,6 +532,18 @@ export function InvoiceForm({
                             className="h-7 text-xs text-right font-mono"
                           />
                         </td>
+                        <td className="px-1 py-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeGuia(idx)}
+                            disabled={guias.length <= 1}
+                            className="text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Eliminar fila"
+                            aria-label="Eliminar fila"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -556,20 +565,11 @@ export function InvoiceForm({
                 size="sm"
                 variant="ghost"
                 className="text-white hover:bg-white/20"
-                onClick={() => {
-                  const firstEmpty = items.findIndex(
-                    (it) => it.description.trim() === "",
-                  );
-                  if (firstEmpty === -1) {
-                    setError("Máximo 10 ítems");
-                    return;
-                  }
-                  const el = document.getElementById(`item-desc-${firstEmpty}`);
-                  el?.focus();
-                }}
+                onClick={addItem}
+                title="Agregar ítem"
               >
-                <Upload className="h-3.5 w-3.5 mr-1" />
-                Cargar Ítems
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Agregar ítem
               </Button>
             </div>
             <div className="p-2">
@@ -582,6 +582,7 @@ export function InvoiceForm({
                       <th className="px-2 py-1">DESCRIPCIÓN</th>
                       <th className="px-2 py-1 w-28 text-right">PRECIO</th>
                       <th className="px-2 py-1 w-28 text-right">TOTAL</th>
+                      <th className="px-2 py-1 w-8"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -630,6 +631,18 @@ export function InvoiceForm({
                             readOnly
                             className="h-7 text-xs text-right font-mono bg-muted"
                           />
+                        </td>
+                        <td className="px-1 py-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            disabled={items.length <= 1}
+                            className="text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Eliminar fila"
+                            aria-label="Eliminar fila"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
