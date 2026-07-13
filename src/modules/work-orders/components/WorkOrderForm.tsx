@@ -108,7 +108,7 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   const [quotationLoading, setQuotationLoading] = useState(false);
   const [lastAppliedQuotationId, setLastAppliedQuotationId] = useState<string | null>(null);
 
-  const [number] = useState(initialNumber || "");
+  const [number] = useState(initialData?.number ?? initialNumber ?? "");
   const [titulo, setTitulo] = useState("");
 
   const [rut, setRut] = useState("");
