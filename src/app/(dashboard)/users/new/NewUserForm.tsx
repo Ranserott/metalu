@@ -3,17 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserForm } from "@/components/users/UserForm";
-import { CreateUserInput } from "@/modules/users/validations/userSchemas";
+import { CreateUserInput, UpdateUserInput } from "@/modules/users/validations/userSchemas";
 import { toast } from "sonner";
 
 interface NewUserFormProps {
   roles: { id: string; name: string }[];
 }
 
+// Matches UserForm's UserFormData = CreateUserInput | (UpdateUserInput & { password?: string }).
+type UserFormData = CreateUserInput | (UpdateUserInput & { password?: string });
+
 export default function NewUserForm({ roles }: NewUserFormProps) {
   const router = useRouter();
 
-  async function handleSubmit(data: CreateUserInput) {
+  async function handleSubmit(data: UserFormData) {
     const response = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

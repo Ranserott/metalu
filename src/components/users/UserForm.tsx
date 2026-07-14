@@ -45,6 +45,7 @@ export function UserForm({
     defaultValues: {
       name: defaultValues?.name || "",
       email: defaultValues?.email || "",
+      phone: defaultValues?.phone ?? "",
       roles: defaultValues?.roles || [],
     },
   });
@@ -77,6 +78,13 @@ export function UserForm({
             type="email"
             {...form.register("email")}
             error={form.formState.errors.email?.message}
+          />
+          <FormField
+            label="Teléfono"
+            type="tel"
+            placeholder="+56 9 ..."
+            {...form.register("phone")}
+            error={form.formState.errors.phone?.message}
           />
           {showPassword && !isEditing && (
             <FormField
