@@ -89,9 +89,9 @@ type Props = {
     iva?: number | string | { toNumber: () => number } | null;
     total?: number | string | { toNumber: () => number } | null;
     materials?: Material[];
+    createdBy?: { id: string; name: string | null; phone: string | null } | null;
     [k: string]: any;
   };
-  users?: Array<{ id: string; name: string | null }>;
   /** Data-URI logo (resolved in the route via getLogoDataUri). Null if logo file missing. */
   logoSrc?: string | null;
 };
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
+export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
   const items = workOrder.materials ?? [];
   const itemsTotal = items.reduce((acc, i) => acc + toNum(i.total), 0);
 
@@ -431,18 +431,17 @@ export function WorkOrderPdf({ workOrder, users = [], logoSrc }: Props) {
           </View>
         </View>
 
-        {/* FOOTER — users (left) + totals (right) */}
+        {/* FOOTER — creator (left) + totals (right) */}
         <View style={styles.footerRow}>
           <View style={styles.footerLeft}>
-            {users.length === 0 ? (
-              <Text style={styles.usuarioLine}>Usuarios: —</Text>
-            ) : (
-              users.map((u) => (
-                <Text style={styles.usuarioLine} key={u.id}>
-                  Usuario: {u.name ?? "—"}
-                </Text>
-              ))
-            )}
+            <Text style={styles.usuarioLine}>
+              Usuario: {workOrder.createdBy?.name ?? "—"}
+            </Text>
+            {workOrder.createdBy?.phone ? (
+              <Text style={styles.usuarioLine}>
+                Teléfono: {workOrder.createdBy.phone}
+              </Text>
+            ) : null}
           </View>
           <View style={styles.footerRight}>
             <View style={styles.resumenLine}>

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma/prisma";
 import { getWorkOrderById } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderPdf } from "@/modules/work-orders/pdf/WorkOrderPdf";
 import { getLogoDataUri } from "@/lib/pdf/logo";
@@ -16,8 +15,8 @@ export const maxDuration = 60;
 /**
  * GET /api/work-orders/[id]/pdf
  *
- * Streams a PDF of the given work order. The "usuarios" footer section lists
- * all active users (names only — User model has no phone field).
+ * Streams a PDF of the given work order. The footer "Usuario" line shows the
+ * creator (WorkOrder.createdBy) with name and phone — not all active users.
  *
  * Auth: any authenticated user.
  */
@@ -36,14 +35,7 @@ export async function GET(
       return NextResponse.json({ error: "Missing work order id" }, { status: 400 });
     }
 
-    const [workOrder, users] = await Promise.all([
-      getWorkOrderById(id),
-      prisma.user.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+    const workOrder = await getWorkOrderById(id);
 
     if (!workOrder) {
       return NextResponse.json({ error: "Work order not found" }, { status: 404 });
@@ -61,7 +53,6 @@ export async function GET(
     const buffer = await renderToBuffer(
       createElement(WorkOrderPdf, {
         workOrder,
-        users,
         logoSrc,
       }) as Parameters<typeof renderToBuffer>[0]
     );

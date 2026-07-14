@@ -12,6 +12,7 @@ const includeRelations = {
       client: { select: { id: true, name: true } },
     },
   },
+  createdBy: { select: { id: true, name: true, phone: true } },
 };
 
 function normalizeDates(data: any) {
