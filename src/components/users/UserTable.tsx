@@ -3,7 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { User } from "@/modules/users/types/user";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/tables/DataTable";
 import Link from "next/link";
 
@@ -43,9 +44,12 @@ export const columns: ColumnDef<User>[] = [
     id: "actions",
     cell: ({ row }) => (
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link href={`/users/${row.original.id}/edit`}>Editar</Link>
-        </Button>
+        <Link
+          href={`/users/${row.original.id}/edit`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Editar
+        </Link>
       </div>
     ),
   },
