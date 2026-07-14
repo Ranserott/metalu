@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import bcrypt from "bcryptjs";
@@ -23,20 +23,25 @@ async function main() {
     create: { name: "Admin" },
   });
 
-  // Create default admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: "admin@metalflow.com" },
-    update: {},
-    create: {
-      email: "admin@metalflow.com",
-      password: hashedPassword,
-      name: "admin",
-      isActive: true,
-      roles: {
-        create: { roleId: adminRole.id },
-      },
-    },
-  });
+  // Create default admin user. `email` is no longer a unique field on User
+  // (we use `name` as the login identifier), so we do an explicit
+  // find-or-create instead of upsert to keep the seed idempotent.
+  const existingAdmin = await prisma.user.findFirst({ where: { name: "admin" } });
+  const adminUser = existingAdmin
+    ? await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: { password: hashedPassword, isActive: true },
+      })
+    : await prisma.user.create({
+        data: {
+          name: "admin",
+          password: hashedPassword,
+          isActive: true,
+          roles: {
+            create: { roleId: adminRole.id },
+          },
+        },
+      });
 
   console.log("✅ Seed completed");
   console.log("Admin user: admin / admin123");

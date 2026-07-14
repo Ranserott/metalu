@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { User } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,11 +54,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        icon={User}
-        title="Mi Perfil"
-        description="Gestiona tu información y contraseña"
-      />
+      <div>
+        <h1 className="text-2xl font-bold">Mi Perfil</h1>
+        <p className="text-sm text-gray-500">Gestiona tu información y contraseña</p>
+      </div>
 
       <Card>
         <CardHeader>
@@ -69,7 +66,6 @@ export default function ProfilePage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
             <div className="space-y-2">
-              <p className="text-sm font-medium">Email: {session?.user?.email}</p>
               <p className="text-sm font-medium">Nombre: {session?.user?.name}</p>
             </div>
             <div className="space-y-2">

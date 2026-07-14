@@ -87,7 +87,7 @@ export default function EditUserForm({ user, roles, userId }: EditUserFormProps)
           onSubmit={handleSubmit}
           defaultValues={{
             name: user.name,
-            email: user.email,
+            phone: user.phone,
             isActive: user.isActive,
             roles: user.roles.map((r) => r.id),
           }}

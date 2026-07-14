@@ -2,8 +2,8 @@ import { Role } from "@/modules/roles/types/role";
 
 export interface User {
   id: string;
-  email: string;
   name: string;
+  phone: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

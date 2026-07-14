@@ -6,7 +6,7 @@ import { CreateUserSchema } from "@/modules/users/validations/userSchemas";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("Admin")) {
+    if (!session?.user || !session.user.roles.includes("admin")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("Admin")) {
+    if (!session?.user || !session.user.roles.includes("admin")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
     if (error.code === "P2002") {
-      return NextResponse.json({ error: "El email ya existe" }, { status: 400 });
+      return NextResponse.json({ error: "Ya existe un usuario con esos datos" }, { status: 400 });
     }
     console.error("Error creating user:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

@@ -44,8 +44,7 @@ export function UserForm({
     resolver: zodResolver(schema),
     defaultValues: {
       name: defaultValues?.name || "",
-      email: defaultValues?.email || "",
-      phone: defaultValues?.phone ?? "",
+      phone: defaultValues?.phone || "",
       roles: defaultValues?.roles || [],
     },
   });
@@ -74,15 +73,7 @@ export function UserForm({
             error={form.formState.errors.name?.message}
           />
           <FormField
-            label="Email"
-            type="email"
-            {...form.register("email")}
-            error={form.formState.errors.email?.message}
-          />
-          <FormField
             label="Teléfono"
-            type="tel"
-            placeholder="+56 9 ..."
             {...form.register("phone")}
             error={form.formState.errors.phone?.message}
           />

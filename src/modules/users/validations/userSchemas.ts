@@ -2,15 +2,13 @@ import { z } from "zod";
 
 export const CreateUserSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(100, "Máximo 100 caracteres"),
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
   phone: z.string().max(30, "Máximo 30 caracteres").optional().nullable(),
+  password: z.string().min(6, "Mínimo 6 caracteres"),
   roles: z.array(z.string()).min(1, "Al menos un rol requerido"),
 });
 
 export const UpdateUserSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(100, "Máximo 100 caracteres").optional(),
-  email: z.string().email("Email inválido").optional(),
   phone: z.string().max(30, "Máximo 30 caracteres").optional().nullable(),
   isActive: z.boolean().optional(),
   roles: z.array(z.string()).min(1, "Al menos un rol requerido").optional(),

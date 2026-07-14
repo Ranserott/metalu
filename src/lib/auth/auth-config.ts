@@ -49,7 +49,6 @@ export const authConfig = {
 
         return {
           id: user.id,
-          email: user.email,
           name: user.name,
           roles: user.roles.map((ur) => ur.role.name),
         };
