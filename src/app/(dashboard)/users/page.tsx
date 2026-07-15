@@ -3,13 +3,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { getUsers } from "@/modules/users/services/userService";
 import { getRoles } from "@/modules/roles/services/roleService";
 import { UserTable } from "@/components/users/UserTable";
+import { auth } from "@/lib/auth/auth";
 import Link from "next/link";
 
 type PrismaUserWithRoles = Awaited<ReturnType<typeof getUsers>>[number];
 type Role = { id: string; name: string };
 
 export default async function UsersPage() {
-  const [users, roles] = await Promise.all([getUsers(), getRoles()]);
+  const [users, roles, session] = await Promise.all([
+    getUsers(),
+    getRoles(),
+    auth(),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -32,6 +37,7 @@ export default async function UsersPage() {
           ...u,
           roles: u.roles.map((ur: { role: Role }) => ur.role),
         }))}
+        currentUserId={session?.user?.id}
       />
     </div>
   );

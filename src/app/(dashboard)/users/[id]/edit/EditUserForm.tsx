@@ -31,8 +31,13 @@ export default function EditUserForm({ user, roles, userId }: EditUserFormProps)
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Error al actualizar usuario");
+      const error = await response.json().catch(() => ({}));
+      const message =
+        typeof error.error === "string"
+          ? error.error
+          : "Error al actualizar usuario";
+      toast.error(message);
+      return;
     }
 
     toast.success("Usuario actualizado exitosamente");
@@ -89,7 +94,7 @@ export default function EditUserForm({ user, roles, userId }: EditUserFormProps)
             name: user.name,
             phone: user.phone,
             isActive: user.isActive,
-            roles: user.roles.map((r) => r.id),
+            roles: user.roles.map((ur) => ur.role.id),
           }}
           isEditing={true}
           roles={roles}
