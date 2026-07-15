@@ -91,7 +91,7 @@ type Props = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 16,
+    paddingTop: 4,
     paddingBottom: 60,
     paddingHorizontal: 40,
     fontFamily: MONO_FONT,
