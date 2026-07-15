@@ -48,6 +48,12 @@ type WorkOrderFormProps = {
     }>;
   } | null;
   editMode?: boolean;
+  /**
+   * When true, hide Grabar/Imprimir/Borrar buttons and leave only
+   * "Guardar Borrador" — supervisor is locked to DRAFT world.
+   * Server side also forces status=DRAFT on POST, this prop just shapes the UI.
+   */
+  forceDraft?: boolean;
   onSubmit: (data: Record<string, any>, items: WorkOrderItemInput[]) => Promise<WorkOrder | null>;
   onCancel: () => void;
 };
@@ -100,7 +106,7 @@ function mapQuotationToState(q: any) {
   };
 }
 
-export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, onCancel }: WorkOrderFormProps) {
+export function WorkOrderForm({ initialNumber, initialData, editMode, forceDraft, onSubmit, onCancel }: WorkOrderFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
@@ -885,32 +891,38 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
             <FileText className="w-4 h-4 mr-2" />
             Guardar Borrador
           </Button>
-          <Button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={submitting}
-            className="bg-[var(--theme-dark)] hover:bg-[var(--theme-darker)] text-white"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {submitting ? "Grabando..." : "Grabar"}
-          </Button>
+          {!forceDraft && (
+            <Button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={submitting}
+              className="bg-[var(--theme-dark)] hover:bg-[var(--theme-darker)] text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {submitting ? "Grabando..." : "Grabar"}
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={resetForm}>
             Limpiar
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={handlePrint} disabled={printing || submitting}>
-            {printing ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Printer className="w-4 h-4 mr-2" />
-            )}
-            {printing ? "Preparando..." : "Imprimir"}
-          </Button>
-          <Button type="button" variant="outline" className="text-red-500 border-red-300 hover:bg-red-50">
-            <Trash className="w-4 h-4 mr-2" />
-            Borrar
-          </Button>
+          {!forceDraft && (
+            <Button type="button" variant="outline" onClick={handlePrint} disabled={printing || submitting}>
+              {printing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Printer className="w-4 h-4 mr-2" />
+              )}
+              {printing ? "Preparando..." : "Imprimir"}
+            </Button>
+          )}
+          {!forceDraft && (
+            <Button type="button" variant="outline" className="text-red-500 border-red-300 hover:bg-red-50">
+              <Trash className="w-4 h-4 mr-2" />
+              Borrar
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={onCancel}>
             <LogOut className="w-4 h-4 mr-2" />
             Salir

@@ -66,6 +66,10 @@ type Props = {
   onEdit?: (wo: WorkOrder) => void;
   onDeleteSuccess?: () => void;
   onStatusChange?: (wo: WorkOrder, newStatus: string) => Promise<void> | void;
+  /** Per-row predicate for edit/delete affordances. Defaults to always-true. */
+  canMutate?: (wo: WorkOrder) => boolean;
+  /** Per-row predicate for the inline status Select. Defaults to always-true. */
+  canChangeStatus?: (wo: WorkOrder) => boolean;
 };
 
 export function WorkOrderTable({
@@ -74,7 +78,11 @@ export function WorkOrderTable({
   onEdit,
   onDeleteSuccess,
   onStatusChange,
+  canMutate,
+  canChangeStatus,
 }: Props) {
+  const canMutateRow = canMutate ?? (() => true);
+  const canChangeRow = canChangeStatus ?? (() => true);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -136,7 +144,7 @@ export function WorkOrderTable({
       cell: ({ row }) => {
         const wo = row.original;
         const isLoading = statusLoading === wo.id;
-        if (!onStatusChange) {
+        if (!onStatusChange || !canChangeRow(wo)) {
           return (
             <span
               className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
@@ -214,52 +222,56 @@ export function WorkOrderTable({
     {
       id: "actions",
       header: "",
-      cell: ({ row }) => (
-        <div className="flex gap-1">
-          {onView && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-gray-400 text-gray-600 hover:bg-gray-50"
-              onClick={() => onView(row.original)}
-              title="Ver detalle"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-          )}
-          {onEdit && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-blue-500 text-blue-500 hover:bg-blue-50"
-              onClick={() => onEdit(row.original)}
-              title="Editar"
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-          )}
-          {onDeleteSuccess && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={async () => {
-                if (confirm("¿Eliminar este trabajo?")) {
-                  setDeleteLoading(row.original.id);
-                  const res = await fetch(`/api/work-orders/${row.original.id}`, {
-                    method: "DELETE",
-                  });
-                  if (res.ok) onDeleteSuccess();
-                  setDeleteLoading(null);
-                }
-              }}
-              disabled={deleteLoading === row.original.id}
-              title="Eliminar"
-            >
-              <Trash2 className="w-4 h-4 text-red-500" />
-            </Button>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const wo = row.original;
+        const editable = canMutateRow(wo);
+        return (
+          <div className="flex gap-1">
+            {onView && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-400 text-gray-600 hover:bg-gray-50"
+                onClick={() => onView(wo)}
+                title="Ver detalle"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
+            {onEdit && editable && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                onClick={() => onEdit(wo)}
+                title="Editar"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
+            {onDeleteSuccess && editable && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  if (confirm("¿Eliminar este trabajo?")) {
+                    setDeleteLoading(wo.id);
+                    const res = await fetch(`/api/work-orders/${wo.id}`, {
+                      method: "DELETE",
+                    });
+                    if (res.ok) onDeleteSuccess();
+                    setDeleteLoading(null);
+                  }
+                }}
+                disabled={deleteLoading === wo.id}
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

@@ -16,6 +16,8 @@ type Props = {
   onEdit: (quotation: Quotation) => void;
   onView: (quotation: Quotation) => void;
   onDeleteSuccess: () => void;
+  /** Per-row predicate for edit/delete affordances. Defaults to always-true. */
+  canMutate?: (quotation: Quotation) => boolean;
 };
 
 const statusColors: Record<string, string> = {
@@ -53,8 +55,9 @@ const quotationGlobalFilter: FilterFn<Quotation> = (row, _columnId, filterValue:
   return haystack.includes(q);
 };
 
-export function QuotationTable({ data, onEdit, onView, onDeleteSuccess }: Props) {
+export function QuotationTable({ data, onEdit, onView, onDeleteSuccess, canMutate }: Props) {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const canMutateRow = canMutate ?? (() => true);
   const [searchValue, setSearchValue] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string | undefined>>({});
 
@@ -114,44 +117,52 @@ export function QuotationTable({ data, onEdit, onView, onDeleteSuccess }: Props)
     {
       id: "actions",
       header: "",
-      cell: ({ row }) => (
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-gray-400 text-gray-600 hover:bg-gray-50"
-            onClick={() => onView(row.original)}
-            title="Ver detalle"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-blue-500 text-blue-500 hover:bg-blue-50"
-            onClick={() => onEdit(row.original)}
-            title="Editar"
-          >
-            <Pencil className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={async () => {
-              if (confirm("¿Eliminar esta cotización?")) {
-                setDeleteLoading(row.original.id);
-                const res = await fetch(`/api/quotations/${row.original.id}`, { method: "DELETE" });
-                if (res.ok) onDeleteSuccess();
-                setDeleteLoading(null);
-              }
-            }}
-            disabled={deleteLoading === row.original.id}
-            title="Eliminar"
-          >
-            <Trash2 className="w-4 h-4 text-red-500" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const q = row.original;
+        const editable = canMutateRow(q);
+        return (
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gray-400 text-gray-600 hover:bg-gray-50"
+              onClick={() => onView(q)}
+              title="Ver detalle"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            {editable && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                onClick={() => onEdit(q)}
+                title="Editar"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
+            {editable && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  if (confirm("¿Eliminar esta cotización?")) {
+                    setDeleteLoading(q.id);
+                    const res = await fetch(`/api/quotations/${q.id}`, { method: "DELETE" });
+                    if (res.ok) onDeleteSuccess();
+                    setDeleteLoading(null);
+                  }
+                }}
+                disabled={deleteLoading === q.id}
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

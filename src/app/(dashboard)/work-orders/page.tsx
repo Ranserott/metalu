@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Plus, BarChart3, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,8 +12,17 @@ import { WorkOrderForm } from "@/modules/work-orders/components/WorkOrderForm";
 import { WorkOrderDetailView } from "@/modules/work-orders/components/WorkOrderDetailView";
 import { WorkOrder } from "@/modules/work-orders/types/workOrder";
 import { WorkOrderItemInput } from "@/modules/work-orders/validations/workOrderSchemas";
+import { isAdmin, isSupervisor } from "@/lib/auth/permissions";
 
 export default function WorkOrdersPage() {
+  const { data: session } = useSession();
+  const roles = (session?.user as any)?.roles as string[] | undefined;
+  const supervisor = isSupervisor(roles ?? []);
+  const admin = isAdmin(roles ?? []);
+
+  const canMutate = (wo: WorkOrder) =>
+    admin || (supervisor && wo.status === "DRAFT");
+  const canChangeStatus = (_wo: WorkOrder) => !supervisor;
   const router = useRouter();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,6 +187,8 @@ export default function WorkOrdersPage() {
           onEdit={handleEdit}
           onDeleteSuccess={fetchWorkOrders}
           onStatusChange={handleStatusChange}
+          canMutate={canMutate}
+          canChangeStatus={canChangeStatus}
         />
       </div>
 
@@ -192,6 +204,7 @@ export default function WorkOrdersPage() {
             initialNumber={editData ? undefined : nextNumber}
             initialData={editData?.id ? editData : null}
             editMode={!!editData?.id}
+            forceDraft={supervisor}
             onSubmit={handleSubmit}
             onCancel={() => {
               setModalOpen(false);

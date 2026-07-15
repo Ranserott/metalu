@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,8 +16,19 @@ import { QuotationTable } from "@/modules/quotations/components/QuotationTable";
 import { QuotationView } from "@/modules/quotations/components/QuotationView";
 import { Quotation } from "@/modules/quotations/types/quotation";
 import { QuotationInput } from "@/modules/quotations/validations/quotationSchemas";
+import { isAdmin, isSupervisor } from "@/lib/auth/permissions";
 
 export default function QuotationsPage() {
+  const { data: session } = useSession();
+  const roles = (session?.user as any)?.roles as string[] | undefined;
+  const supervisor = isSupervisor(roles ?? []);
+  const admin = isAdmin(roles ?? []);
+
+  // Supervisor can edit/delete a quotation only while it's still in DRAFT.
+  // Admin: full access. Other roles: see the table unchanged (canMutate = false).
+  const canMutate = (q: Quotation) =>
+    admin || (supervisor && q.status === "DRAFT");
+
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -134,6 +146,7 @@ export default function QuotationsPage() {
           onEdit={handleEdit}
           onView={handleView}
           onDeleteSuccess={fetchQuotations}
+          canMutate={canMutate}
         />
       </div>
 
