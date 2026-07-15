@@ -50,13 +50,13 @@ export default function RootLayout({
     <html lang="es" className={`${ebGaramond.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
-      </head>
-      <body className="min-h-full flex flex-col">
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var s=localStorage.getItem('metalu.fontScale');if(s&&/^0\\.(90|95)$|^1\\.(00|05|10)$/.test(s)){document.documentElement.setAttribute('data-font-scale',s);}}catch(e){}})();`,
           }}
         />
+      </head>
+      <body className="min-h-full flex flex-col">
         <TooltipProvider>
           <Providers>{children}</Providers>
         </TooltipProvider>
