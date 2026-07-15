@@ -54,7 +54,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('metalu.fontScale');if(s&&/^0\\.(9|95|10)$|^1\\.(00|05|10)$/.test(s)){document.documentElement.setAttribute('data-font-scale',s);}}catch(e){}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('metalu.fontScale');if(s&&/^0\\.(90|95)$|^1\\.(00|05|10)$/.test(s)){document.documentElement.setAttribute('data-font-scale',s);}}catch(e){}})();`,
           }}
         />
         <TooltipProvider>
