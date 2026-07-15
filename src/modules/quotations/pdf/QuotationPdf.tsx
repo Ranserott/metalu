@@ -91,7 +91,7 @@ type Props = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 28,
+    paddingTop: 16,
     paddingBottom: 60,
     paddingHorizontal: 40,
     fontFamily: MONO_FONT,
@@ -300,13 +300,13 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
         <View style={styles.headerCenter}>
           <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
           <Text style={styles.companyName}>{COMPANY.name}</Text>
+          <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
           <Text style={styles.companyLine}>
             {COMPANY.address}  *  {COMPANY.neighborhood}
           </Text>
           <Text style={styles.companyLine}>
             FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
           </Text>
-          <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
           <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
         </View>
 
