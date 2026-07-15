@@ -314,72 +314,77 @@ export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
       subject={`Trabajo ${workOrder.number}`}
     >
       <Page size="A4" style={styles.page}>
-        {/* HEADER */}
-        <View style={styles.headerRow}>
-          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
-          <View style={styles.headerRight}>
-            <Text style={styles.title}>TRABAJO N°{workOrder.number}</Text>
-            <Text style={styles.companyName}>{COMPANY.name}</Text>
-            <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
-            <Text style={styles.companyLine}>
-              {COMPANY.address}  *  {COMPANY.neighborhood}
-            </Text>
-            <Text style={styles.companyLine}>
-              FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
-            </Text>
-            <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
-          </View>
-        </View>
-
-        {/* CLIENT INFO BOX — 2-column grid with row dividers */}
-        <View style={styles.box}>
-          {[
-            ["Cliente", clienteName, "Fecha", formatDate(fecha)],
-            [
-              "Rut",
-              rut || "—",
-              "Ciudad",
-              ciudad || "—",
-            ],
-            [
-              "Direccion",
-              direccion,
-              "Condiciones Pago",
-              workOrder.condicionesPago || "—",
-            ],
-            [
-              "Celular",
-              workOrder.celular || "—",
-              "Plazo Entrega",
-              workOrder.plazoDias != null ? `${workOrder.plazoDias} días` : "—",
-            ],
-          ].map(([lblL, valL, lblR, valR], idx, arr) => (
-            <View
-              key={idx}
-              style={
-                idx === arr.length - 1
-                  ? styles.boxFieldRowLast
-                  : styles.boxFieldRow
-              }
-            >
-              <View style={[styles.cell, styles.cellLabel]}>
-                <Text style={styles.cellLabelText}>{lblL}</Text>
-              </View>
-              <View style={[styles.cell, styles.cellValue]}>
-                <Text style={styles.cellValueText}>{valL}</Text>
-              </View>
-              <View style={[styles.cell, styles.cellLabel]}>
-                <Text style={styles.cellLabelText}>{lblR}</Text>
-              </View>
-              <View style={[styles.cell, styles.cellValue]}>
-                <Text style={styles.cellValueText}>{valR}</Text>
-              </View>
+        {/* HEADER + CLIENT INFO + ENTREGADO POR — wrap={false} keeps this
+            block together on page 1. If a work order has many items the
+            materials table will flow to subsequent pages; this section is
+            never repeated. */}
+        <View wrap={false}>
+          {/* HEADER */}
+          <View style={styles.headerRow}>
+            {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
+            <View style={styles.headerRight}>
+              <Text style={styles.title}>TRABAJO N°{workOrder.number}</Text>
+              <Text style={styles.companyName}>{COMPANY.name}</Text>
+              <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
+              <Text style={styles.companyLine}>
+                {COMPANY.address}  *  {COMPANY.neighborhood}
+              </Text>
+              <Text style={styles.companyLine}>
+                FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
+              </Text>
+              <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* ENTREGADO POR BOX */}
-        <View style={styles.entregadoBox}>
+          {/* CLIENT INFO BOX — 2-column grid with row dividers */}
+          <View style={styles.box}>
+            {[
+              ["Cliente", clienteName, "Fecha", formatDate(fecha)],
+              [
+                "Rut",
+                rut || "—",
+                "Ciudad",
+                ciudad || "—",
+              ],
+              [
+                "Direccion",
+                direccion,
+                "Condiciones Pago",
+                workOrder.condicionesPago || "—",
+              ],
+              [
+                "Celular",
+                workOrder.celular || "—",
+                "Plazo Entrega",
+                workOrder.plazoDias != null ? `${workOrder.plazoDias} días` : "—",
+              ],
+            ].map(([lblL, valL, lblR, valR], idx, arr) => (
+              <View
+                key={idx}
+                style={
+                  idx === arr.length - 1
+                    ? styles.boxFieldRowLast
+                    : styles.boxFieldRow
+                }
+              >
+                <View style={[styles.cell, styles.cellLabel]}>
+                  <Text style={styles.cellLabelText}>{lblL}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellValue]}>
+                  <Text style={styles.cellValueText}>{valL}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellLabel]}>
+                  <Text style={styles.cellLabelText}>{lblR}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellValue]}>
+                  <Text style={styles.cellValueText}>{valR}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* ENTREGADO POR BOX */}
+          <View style={styles.entregadoBox}>
           <View style={styles.boxFieldRow}>
             <View style={[styles.cell, styles.cellLabel]}>
               <Text style={styles.cellLabelText}>Entregado por:</Text>
@@ -390,6 +395,7 @@ export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
               </Text>
             </View>
           </View>
+        </View>
         </View>
 
         {/* ITEMS TABLE */}
@@ -431,54 +437,60 @@ export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
           </View>
         </View>
 
-        {/* FOOTER — creator (left) + totals (right) */}
-        <View style={styles.footerRow}>
-          <View style={styles.footerLeft}>
-            <Text style={styles.usuarioLine}>
-              Usuario: {workOrder.createdBy?.name ?? "—"}
-            </Text>
-            {workOrder.createdBy?.phone ? (
+        {/* FOOTER (totals) + SIGNATURE + DISCLAIMER — wrap={false} keeps them
+            together at the end of the document. If the materials table
+            overflows the first page, this block lands on whichever page has
+            room for it. */}
+        <View wrap={false}>
+          {/* FOOTER — creator (left) + totals (right) */}
+          <View style={styles.footerRow}>
+            <View style={styles.footerLeft}>
               <Text style={styles.usuarioLine}>
-                Teléfono: {workOrder.createdBy.phone}
+                Usuario: {workOrder.createdBy?.name ?? "—"}
               </Text>
-            ) : null}
-          </View>
-          <View style={styles.footerRight}>
-            <View style={styles.resumenLine}>
-              <Text>Sub-Total Neto:</Text>
-              <Text>{formatCLP(neto)}</Text>
+              {workOrder.createdBy?.phone ? (
+                <Text style={styles.usuarioLine}>
+                  Teléfono: {workOrder.createdBy.phone}
+                </Text>
+              ) : null}
             </View>
-            {descuentoPct > 0 && (
+            <View style={styles.footerRight}>
               <View style={styles.resumenLine}>
-                <Text>(-) Descuento {descuentoPct}%:</Text>
-                <Text>{formatCLP(descuentoAmount)}</Text>
+                <Text>Sub-Total Neto:</Text>
+                <Text>{formatCLP(neto)}</Text>
               </View>
-            )}
-            <View style={styles.resumenLine}>
-              <Text>Neto:</Text>
-              <Text>{formatCLP(subtotalAfecto)}</Text>
-            </View>
-            <View style={styles.resumenLine}>
-              <Text>Iva:</Text>
-              <Text>{formatCLP(iva)}</Text>
-            </View>
-            <View style={styles.resumenTotal}>
-              <Text>Total:</Text>
-              <Text>{formatCLP(total)}</Text>
+              {descuentoPct > 0 && (
+                <View style={styles.resumenLine}>
+                  <Text>(-) Descuento {descuentoPct}%:</Text>
+                  <Text>{formatCLP(descuentoAmount)}</Text>
+                </View>
+              )}
+              <View style={styles.resumenLine}>
+                <Text>Neto:</Text>
+                <Text>{formatCLP(subtotalAfecto)}</Text>
+              </View>
+              <View style={styles.resumenLine}>
+                <Text>Iva:</Text>
+                <Text>{formatCLP(iva)}</Text>
+              </View>
+              <View style={styles.resumenTotal}>
+                <Text>Total:</Text>
+                <Text>{formatCLP(total)}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* SIGNATURE */}
-        <View style={styles.firmaContainer}>
-          <View style={styles.firmaLine} />
-          <Text style={styles.firmaText}>Firma Cliente</Text>
-        </View>
+          {/* SIGNATURE */}
+          <View style={styles.firmaContainer}>
+            <View style={styles.firmaLine} />
+            <Text style={styles.firmaText}>Firma Cliente</Text>
+          </View>
 
-        {/* DISCLAIMER */}
-        <Text style={styles.disclaimer}>
-          NO SE RESPONDE POR TRABAJOS DEJADOS MAS DE 45 DIAS EN EL TALLER
-        </Text>
+          {/* DISCLAIMER */}
+          <Text style={styles.disclaimer}>
+            NO SE RESPONDE POR TRABAJOS DEJADOS MAS DE 45 DIAS EN EL TALLER
+          </Text>
+        </View>
       </Page>
     </Document>
   );
