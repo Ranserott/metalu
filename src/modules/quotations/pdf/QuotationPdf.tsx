@@ -1,12 +1,19 @@
+import React from "react";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { COMPANY } from "@/config/company";
 
-const numberFormatter = new Intl.NumberFormat("en-US", {
+// Layout mirrors WorkOrderPdf (Solicitud OT maqueta) — same sections, same
+// borders, same column widths. Only the data source changes.
+const MONO_FONT = "Courier";
+
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
   maximumFractionDigits: 0,
 });
 
-function formatNumber(n: number): string {
-  return numberFormatter.format(Number.isFinite(n) ? n : 0);
+function formatCLP(n: number): string {
+  return clp.format(Number.isFinite(n) ? n : 0);
 }
 
 function formatQuantity(n: number): string {
@@ -14,7 +21,8 @@ function formatQuantity(n: number): string {
   return Number.isInteger(num) ? String(num) : num.toFixed(2);
 }
 
-function formatDate(d: Date | string): string {
+function formatDate(d: Date | string | null | undefined): string {
+  if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -24,10 +32,6 @@ function formatDate(d: Date | string): string {
 
 type DecimalLike = { toNumber: () => number };
 
-function isDecimalLike(v: unknown): v is DecimalLike {
-  return typeof v === "object" && v !== null && "toNumber" in v && typeof v.toNumber === "function";
-}
-
 function toNum(v: number | string | DecimalLike | null | undefined): number {
   if (v == null) return 0;
   if (typeof v === "number") return v;
@@ -35,9 +39,9 @@ function toNum(v: number | string | DecimalLike | null | undefined): number {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : 0;
   }
-  if (isDecimalLike(v)) {
+  if (typeof (v as any).toNumber === "function") {
     try {
-      return v.toNumber();
+      return (v as any).toNumber();
     } catch {
       return 0;
     }
@@ -52,7 +56,6 @@ type Item = {
   quantity: number | string | DecimalLike;
   unitPrice: number | string | DecimalLike;
   total: number | string | DecimalLike;
-  type: "MATERIAL" | "WORK";
 };
 
 type Props = {
@@ -62,7 +65,6 @@ type Props = {
     descripcionTrabajo?: string | null;
     plazoEntrega?: string | null;
     atencion?: string | null;
-    area?: string | null;
     client: {
       id: string;
       name: string;
@@ -70,7 +72,7 @@ type Props = {
       address?: string | null;
       city?: string | null;
     };
-    createdBy?: { id: string; name: string | null } | null;
+    createdBy?: { id: string; name: string | null; phone?: string | null } | null;
     items: Item[];
     subtotal: number | string | DecimalLike;
     tax: number | string | DecimalLike;
@@ -81,293 +83,181 @@ type Props = {
     validUntil: Date | string;
     [k: string]: unknown;
   };
+  /** Data-URI logo (resolved in the route via getLogoDataUri). Null if logo file missing. */
   logoSrc?: string | null;
 };
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 14,
-    paddingBottom: 26,
-    paddingHorizontal: 12,
-    fontFamily: "Courier",
+    paddingTop: 28,
+    paddingBottom: 60,
+    paddingHorizontal: 40,
+    fontFamily: MONO_FONT,
     fontSize: 10,
     color: "#111",
   },
-  bold: {
-    fontWeight: 700,
-  },
-  header: {
+  headerRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 10,
   },
-  logoWrap: {
-    width: 135,
-  },
   logo: {
-    width: 92,
-    height: 92,
+    width: 70,
+    height: 70,
   },
-  headerCenter: {
-    width: 330,
-    paddingTop: 18,
+  headerRight: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+    maxWidth: 360,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 700,
-    textAlign: "center",
-    marginBottom: 3,
-    letterSpacing: 1.2,
+    marginBottom: 4,
+    fontFamily: MONO_FONT,
   },
   companyName: {
-    fontSize: 11,
     fontWeight: 700,
+    fontSize: 11,
   },
   companyLine: {
     fontSize: 10,
-    lineHeight: 1.15,
   },
   companyMail: {
+    fontWeight: 700,
+    fontSize: 10,
+  },
+  box: {
+    borderWidth: 2,
+    borderStyle: "solid",
+    borderColor: "#111",
+    marginBottom: 6,
+  },
+  boxFieldRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "#111",
+    minHeight: 14,
+  },
+  boxFieldRowLast: {
+    flexDirection: "row",
+    borderBottomWidth: 0,
+    minHeight: 14,
+  },
+  cell: {
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+  },
+  cellLabel: { width: "22%" },
+  cellValue: { width: "28%" },
+  cellLabelText: {
     fontSize: 10,
     fontWeight: 700,
-    lineHeight: 1.15,
   },
-  pageNumber: {
-    width: 90,
-    paddingTop: 30,
-    fontSize: 9,
-    textAlign: "right",
+  cellValueText: {
+    fontSize: 10,
   },
-  clientDateRow: {
+  descripcionBox: {
+    borderWidth: 2,
+    borderStyle: "solid",
+    borderColor: "#111",
+    marginBottom: 8,
+  },
+  table: {
+    borderTop: 1,
+    borderLeft: 1,
+    borderRight: 1,
+    borderColor: "#111",
+  },
+  tRow: {
+    flexDirection: "row",
+    borderBottom: 1,
+    borderColor: "#111",
+    minHeight: 18,
+  },
+  tableHeaderRow: {
+    backgroundColor: "#e8e8e8",
+  },
+  tableHeaderCell: {
+    fontWeight: 700,
+    fontSize: 10,
+  },
+  tCell: {
+    paddingVertical: 3,
+    paddingHorizontal: 4,
+    fontSize: 10,
+    borderRight: 1,
+    borderColor: "#111",
+  },
+  tCellLast: {
+    borderRight: 0,
+  },
+  cItem: { width: "8%" },
+  cDet: { width: "64%" },
+  cPrice: { width: "14%" },
+  cTotal: { width: "14%" },
+  totalRow: {
+    flexDirection: "row",
+    borderTop: 1,
+    borderColor: "#111",
+    paddingVertical: 3,
+    paddingHorizontal: 4,
+    justifyContent: "flex-end",
+  },
+  footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 2,
-  },
-  clientBlock: {
-    width: 410,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    minHeight: 12,
-  },
-  label: {
-    width: 76,
-    fontWeight: 700,
-  },
-  fieldValue: {
-    flexGrow: 1,
-  },
-  dateBlock: {
-    width: 165,
-    paddingTop: 2,
-    flexDirection: "row",
-  },
-  dateLabel: {
-    width: 45,
-  },
-  description: {
-    marginTop: 1,
-    marginBottom: 3,
-    flexDirection: "row",
-  },
-  descriptionLabel: {
-    fontWeight: 700,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: 700,
-    marginTop: 1,
-    marginBottom: 1,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    borderBottomColor: "#888",
-    paddingBottom: 1,
-    marginBottom: 2,
-    fontWeight: 700,
-  },
-  row: {
-    flexDirection: "row",
-    minHeight: 14,
-  },
-  itemCol: {
-    width: 34,
-  },
-  descCol: {
-    width: 350,
-  },
-  unitCol: {
-    width: 58,
-    textAlign: "right",
-  },
-  priceCol: {
-    width: 82,
-    textAlign: "right",
-  },
-  totalCol: {
-    width: 82,
-    textAlign: "right",
-  },
-  sectionTotal: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 3,
-    marginBottom: 2,
-    fontWeight: 700,
-  },
-  sectionTotalLabel: {
-    width: 60,
-    textAlign: "right",
-  },
-  sectionTotalValue: {
-    width: 92,
-    textAlign: "right",
-  },
-  summaryTable: {
-    width: 382,
-    marginTop: 0,
-  },
-  summaryHeader: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    borderBottomColor: "#aaa",
-    paddingBottom: 1,
-    fontWeight: 700,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    minHeight: 14,
-    fontWeight: 700,
-  },
-  summaryItemCol: {
-    width: 44,
-    textAlign: "right",
-    paddingRight: 10,
-  },
-  summaryDescCol: {
-    width: 240,
-  },
-  summaryTotalCol: {
-    width: 98,
-    textAlign: "right",
-  },
-  totalsBlock: {
-    width: 450,
-    marginTop: 4,
-    paddingTop: 2,
-    borderTopWidth: 1,
-    borderTopStyle: "solid",
-    borderTopColor: "#888",
-  },
-  totalsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    minHeight: 14,
-    fontWeight: 700,
-  },
-  totalsLabel: {
-    width: 170,
-    textAlign: "right",
-  },
-  totalsValue: {
-    width: 98,
-    textAlign: "right",
-  },
-  totalsPercent: {
-    width: 60,
-    textAlign: "right",
-  },
-  footer: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: 22,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+    marginTop: 14,
   },
   footerLeft: {
-    width: 260,
+    width: "55%",
+    paddingRight: 8,
+  },
+  footerRight: {
+    width: "40%",
+  },
+  usuarioLine: {
+    fontSize: 10,
+    marginBottom: 1,
+  },
+  resumenLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 2,
     fontSize: 10,
   },
-  stamp: {
-    width: 150,
-    minHeight: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    borderTopWidth: 1,
-    borderTopStyle: "solid",
-    borderTopColor: "#ddd",
-    paddingTop: 4,
+  resumenTotal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+    fontSize: 11,
+    fontWeight: 700,
+    borderTop: 1,
+    borderColor: "#111",
+    marginTop: 2,
   },
-  stampText: {
-    fontSize: 7,
+  firmaContainer: {
+    marginTop: 30,
+    alignItems: "center",
+  },
+  firmaLine: {
+    borderTop: 1,
+    borderColor: "#111",
+    width: 220,
+    marginBottom: 4,
+  },
+  firmaText: {
+    fontStyle: "italic",
+    fontSize: 10,
     textAlign: "center",
-    color: "#333",
   },
 });
 
-function FieldRow({ label, value, boldValue = false }: { label: string; value?: string | null; boldValue?: boolean }) {
-  return (
-    <View style={styles.fieldRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.fieldValue, boldValue ? styles.bold : null]}>{value || ""}</Text>
-    </View>
-  );
-}
-
-function SectionTitle({ children }: { children: string }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
-}
-
-function ItemsTable({ items, total }: { items: Item[]; total: number }) {
-  return (
-    <View>
-      <View style={styles.tableHeader}>
-        <Text style={styles.itemCol}>Item</Text>
-        <Text style={styles.descCol}>Descripcion</Text>
-        <Text style={styles.unitCol}>Unidad</Text>
-        <Text style={styles.priceCol}>P.Unitario</Text>
-        <Text style={styles.totalCol}>Total</Text>
-      </View>
-      {items.map((item, index) => (
-        <View style={styles.row} key={item.id}>
-          <Text style={styles.itemCol}>{index + 1}</Text>
-          <Text style={styles.descCol}>{item.description}</Text>
-          <Text style={styles.unitCol}>{formatQuantity(toNum(item.quantity))}</Text>
-          <Text style={styles.priceCol}>{formatNumber(toNum(item.unitPrice))}</Text>
-          <Text style={styles.totalCol}>{formatNumber(toNum(item.total))}</Text>
-        </View>
-      ))}
-      <View style={styles.sectionTotal}>
-        <Text style={styles.sectionTotalLabel}>Total</Text>
-        <Text style={styles.sectionTotalValue}>{total > 0 ? formatNumber(total) : ""}</Text>
-      </View>
-    </View>
-  );
-}
-
-function SummaryRow({ item, description, total }: { item: number; description: string; total?: number }) {
-  return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryItemCol}>{item}</Text>
-      <Text style={styles.summaryDescCol}>{description}</Text>
-      <Text style={styles.summaryTotalCol}>{total && total > 0 ? formatNumber(total) : ""}</Text>
-    </View>
-  );
-}
-
 export function QuotationPdf({ quotation, logoSrc }: Props) {
   const items = quotation.items ?? [];
-  const materials = items.filter((item) => item.type === "MATERIAL");
-  const works = items.filter((item) => item.type === "WORK");
-
-  const materialsTotal = materials.reduce((acc, item) => acc + toNum(item.total), 0);
-  const worksTotal = works.reduce((acc, item) => acc + toNum(item.total), 0);
+  const itemsTotal = items.reduce((acc, i) => acc + toNum(i.total), 0);
 
   const subtotal = toNum(quotation.subtotal);
   const tax = toNum(quotation.tax);
@@ -384,106 +274,176 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
     discountAmount = discount;
     discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
   }
-
   const neto = Math.max(subtotal - discountAmount, 0);
-  const cotizo = quotation.createdBy?.name?.trim() || "";
+
+  const cliente = quotation.client;
+  const clienteName = cliente?.name ?? "—";
+  const rut = cliente?.code ?? "";
+  const direccion = cliente?.address ?? "—";
+  const ciudad = cliente?.city ?? "—";
 
   return (
-    <Document title={`Cotizacion ${quotation.number}`} author={COMPANY.name} subject={`Cotizacion ${quotation.number}`}>
+    <Document
+      title={`Cotizacion ${quotation.number}`}
+      author={COMPANY.name}
+      subject={`Cotizacion ${quotation.number}`}
+    >
       <Page size="A4" style={styles.page}>
-        <View style={styles.header} fixed>
-          <View style={styles.logoWrap}>{logoSrc ? <Image src={logoSrc} style={styles.logo} alt="Logo Metalurgica Ñuble" /> : null}</View>
-          <View style={styles.headerCenter}>
+        {/* HEADER */}
+        <View style={styles.headerRow}>
+          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
+          <View style={styles.headerRight}>
             <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
-            <Text style={styles.companyLine}>{COMPANY.address} {COMPANY.city}</Text>
+            <Text style={styles.companyLine}>
+              {COMPANY.address}  *  {COMPANY.neighborhood}
+            </Text>
+            <Text style={styles.companyLine}>
+              FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
+            </Text>
             <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
-            <Text style={styles.companyLine}>GIRO: {COMPANY.giro}</Text>
-            <Text style={styles.companyLine}>FONO: {COMPANY.phone}</Text>
             <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
           </View>
-          <Text style={styles.pageNumber} render={({ pageNumber }) => `Pagina    ${pageNumber}`} fixed />
         </View>
 
-        <View style={styles.clientDateRow}>
-          <View style={styles.clientBlock}>
-            <FieldRow label="Cliente" value={quotation.client?.name} boldValue />
-            <FieldRow label="Rut" value={quotation.client?.code} boldValue />
-            <FieldRow label="Direccion" value={quotation.client?.address} />
-            <FieldRow label="Ciudad" value={quotation.client?.city} />
-            <FieldRow label="Atencion" value={quotation.atencion} boldValue />
-            <FieldRow label="Area" value={quotation.area} />
-          </View>
-          <View style={styles.dateBlock}>
-            <Text style={styles.dateLabel}>Fecha</Text>
-            <Text>{formatDate(quotation.createdAt)}</Text>
-          </View>
+        {/* CLIENT INFO BOX — 2-column grid with row dividers */}
+        <View style={styles.box}>
+          {[
+            ["Cliente", clienteName, "Fecha", formatDate(quotation.createdAt)],
+            ["Rut", rut || "—", "Ciudad", ciudad || "—"],
+            [
+              "Direccion",
+              direccion,
+              "Plazo Entrega",
+              quotation.plazoEntrega || "—",
+            ],
+            [
+              "Atencion",
+              quotation.atencion || "—",
+              "Validez Oferta",
+              formatDate(quotation.validUntil),
+            ],
+          ].map(([lblL, valL, lblR, valR], idx, arr) => (
+            <View
+              key={idx}
+              style={
+                idx === arr.length - 1
+                  ? styles.boxFieldRowLast
+                  : styles.boxFieldRow
+              }
+            >
+              <View style={[styles.cell, styles.cellLabel]}>
+                <Text style={styles.cellLabelText}>{lblL}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellValue]}>
+                <Text style={styles.cellValueText}>{valL}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellLabel]}>
+                <Text style={styles.cellLabelText}>{lblR}</Text>
+              </View>
+              <View style={[styles.cell, styles.cellValue]}>
+                <Text style={styles.cellValueText}>{valR}</Text>
+              </View>
+            </View>
+          ))}
         </View>
 
-        <View style={styles.description}>
-          <Text style={styles.descriptionLabel}>Descripcion Trabajo:</Text>
-          <Text style={styles.bold}> {quotation.descripcionTrabajo || ""}</Text>
-        </View>
-
-        <SectionTitle>I. DETALLE DE MATERIALES</SectionTitle>
-        <ItemsTable items={materials} total={materialsTotal} />
-
-        <SectionTitle>II. DETALLE DE TRABAJOS REALIZADOS</SectionTitle>
-        <ItemsTable items={works} total={worksTotal} />
-
-        <SectionTitle>IV. RESUMEN GENERAL</SectionTitle>
-        <View style={styles.summaryTable}>
-          <View style={styles.summaryHeader}>
-            <Text style={styles.itemCol}>Item</Text>
-            <Text style={styles.summaryDescCol}>Descripcion</Text>
-            <Text style={styles.summaryTotalCol}>Total</Text>
-          </View>
-          <SummaryRow item={1} description="Detalle de Materiales" total={materialsTotal} />
-          <SummaryRow item={2} description="Detalle de Trabajos Realizados" total={worksTotal} />
-          <SummaryRow item={3} description="Mano de Obra" />
-          <SummaryRow item={4} description="G.G. y Utilidades" />
-        </View>
-
-        <View style={styles.totalsBlock}>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Sub-Total Neto</Text>
-            <Text style={styles.totalsValue}>{formatNumber(subtotal)}</Text>
-            <Text style={styles.totalsPercent}></Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>(-) Descuento</Text>
-            <Text style={styles.totalsValue}>{discountAmount > 0 ? formatNumber(discountAmount) : ""}</Text>
-            <Text style={styles.totalsPercent}>{discountPercent > 0 ? `${discountPercent}%` : "%"}</Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Neto</Text>
-            <Text style={styles.totalsValue}>{formatNumber(neto)}</Text>
-            <Text style={styles.totalsPercent}></Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Iva</Text>
-            <Text style={styles.totalsValue}>{formatNumber(tax)}</Text>
-            <Text style={styles.totalsPercent}></Text>
-          </View>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Total</Text>
-            <Text style={styles.totalsValue}>{formatNumber(total)}</Text>
-            <Text style={styles.totalsPercent}></Text>
+        {/* DESCRIPCIÓN BOX */}
+        <View style={styles.descripcionBox}>
+          <View style={styles.boxFieldRowLast}>
+            <View style={[styles.cell, styles.cellLabel]}>
+              <Text style={styles.cellLabelText}>Descripción:</Text>
+            </View>
+            <View style={[styles.cell, { width: "78%" }]}>
+              <Text style={styles.cellValueText}>
+                {quotation.descripcionTrabajo || "—"}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.footer} fixed>
+        {/* ITEMS TABLE — single table (MATERIAL + WORK combined) */}
+        <View style={styles.table}>
+          <View style={[styles.tRow, styles.tableHeaderRow]}>
+            <Text style={[styles.tCell, styles.cItem, styles.tableHeaderCell]}>CANT</Text>
+            <Text style={[styles.tCell, styles.cDet, styles.tableHeaderCell]}>DETALLE</Text>
+            <Text style={[styles.tCell, styles.cPrice, styles.tableHeaderCell, { textAlign: "right" }]}>
+              P. UNITARIO
+            </Text>
+            <Text style={[styles.tCell, styles.cTotal, styles.tCellLast, styles.tableHeaderCell, { textAlign: "right" }]}>
+              TOTAL
+            </Text>
+          </View>
+          {items.length === 0 ? (
+            <View style={styles.tRow}>
+              <Text style={[styles.tCell, { width: "100%" }]}>—</Text>
+            </View>
+          ) : (
+            items.map((it, idx) => (
+              <View style={styles.tRow} key={it.id ?? idx}>
+                <Text style={[styles.tCell, styles.cItem]}>{formatQuantity(toNum(it.quantity))}</Text>
+                <Text style={[styles.tCell, styles.cDet]}>{it.description}</Text>
+                <Text style={[styles.tCell, styles.cPrice, { textAlign: "right" }]}>
+                  {formatCLP(toNum(it.unitPrice))}
+                </Text>
+                <Text style={[styles.tCell, styles.cTotal, styles.tCellLast, { textAlign: "right" }]}>
+                  {formatCLP(toNum(it.total))}
+                </Text>
+              </View>
+            ))
+          )}
+          <View style={styles.totalRow}>
+            <Text style={{ fontWeight: 700, marginRight: 8 }}>
+              Total {items.length}
+            </Text>
+            <Text style={{ fontWeight: 700 }}>{formatCLP(itemsTotal)}</Text>
+          </View>
+        </View>
+
+        {/* FOOTER — creator (left) + totals (right) */}
+        <View style={styles.footerRow}>
           <View style={styles.footerLeft}>
-            <Text>Plazo de Entrega: {quotation.plazoEntrega || ""}</Text>
-            <Text>Validez Oferta: {formatDate(quotation.validUntil)}</Text>
-            <Text>Cotizo: {cotizo}</Text>
+            <Text style={styles.usuarioLine}>
+              Usuario: {quotation.createdBy?.name ?? "—"}
+            </Text>
+            {quotation.createdBy?.phone ? (
+              <Text style={styles.usuarioLine}>
+                Teléfono: {quotation.createdBy.phone}
+              </Text>
+            ) : null}
           </View>
-          <View style={styles.stamp}>
-            <Text style={styles.stampText}>Soc. Metalurgica Ñuble Ltda.</Text>
-            <Text style={styles.stampText}>RUT: {COMPANY.rut}</Text>
-            <Text style={styles.stampText}>{COMPANY.address}</Text>
-            <Text style={styles.stampText}>FONO: {COMPANY.phone} / {COMPANY.city}</Text>
+          <View style={styles.footerRight}>
+            <View style={styles.resumenLine}>
+              <Text>Sub-Total Neto:</Text>
+              <Text>{formatCLP(subtotal)}</Text>
+            </View>
+            {discountAmount > 0 && (
+              <View style={styles.resumenLine}>
+                <Text>
+                  (-) Descuento{discountType === "PERCENT" ? ` ${discountPercent}%` : ""}:
+                </Text>
+                <Text>{formatCLP(discountAmount)}</Text>
+              </View>
+            )}
+            <View style={styles.resumenLine}>
+              <Text>Neto:</Text>
+              <Text>{formatCLP(neto)}</Text>
+            </View>
+            <View style={styles.resumenLine}>
+              <Text>Iva:</Text>
+              <Text>{formatCLP(tax)}</Text>
+            </View>
+            <View style={styles.resumenTotal}>
+              <Text>Total:</Text>
+              <Text>{formatCLP(total)}</Text>
+            </View>
           </View>
+        </View>
+
+        {/* SIGNATURE */}
+        <View style={styles.firmaContainer}>
+          <View style={styles.firmaLine} />
+          <Text style={styles.firmaText}>Firma Cliente</Text>
         </View>
       </Page>
     </Document>

@@ -20,7 +20,7 @@ export async function getQuotationById(id: string) {
     where: { id, deletedAt: null },
     include: {
       client: { select: { id: true, name: true, code: true, address: true, city: true } },
-      createdBy: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true, phone: true } },
       items: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });
