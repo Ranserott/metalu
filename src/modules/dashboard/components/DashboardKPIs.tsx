@@ -1,6 +1,11 @@
-import { Users, Wrench, FileText, AlertCircle } from "lucide-react";
+import { Users, Wrench, FileText, AlertCircle, FilePen } from "lucide-react";
 
-type KPIKey = "totalClients" | "activeWorkOrders" | "pendingQuotations" | "overdueInvoices";
+type KPIKey =
+  | "totalClients"
+  | "activeWorkOrders"
+  | "draftWorkOrders"
+  | "pendingQuotations"
+  | "overdueInvoices";
 
 type KPIConfigEntry = {
   label: string;
@@ -17,6 +22,11 @@ const KPI_CONFIG: Record<KPIKey, KPIConfigEntry> = {
     icon: Wrench,
     color: "text-orange-500",
   },
+  draftWorkOrders: {
+    label: "Borradores Pendientes",
+    icon: FilePen,
+    color: "text-yellow-600",
+  },
   pendingQuotations: {
     label: "Cotizaciones Pendientes",
     scopedLabel: "Mis Cotizaciones pendientes",
@@ -26,13 +36,21 @@ const KPI_CONFIG: Record<KPIKey, KPIConfigEntry> = {
   overdueInvoices: { label: "Facturas Vencidas", icon: AlertCircle, color: "text-red-500" },
 };
 
-// Supervisors see only OTs + Quotations (their own). The global totals
-// (clients, invoices) don't apply to their world, so we hide them.
+// Admins get the full system view incl. drafts awaiting review.
+// Supervisors see only their own OTs + Quotations.
+const ADMIN_KEYS: KPIKey[] = [
+  "totalClients",
+  "activeWorkOrders",
+  "draftWorkOrders",
+  "pendingQuotations",
+  "overdueInvoices",
+];
 const SCOPED_VISIBLE_KEYS: KPIKey[] = ["activeWorkOrders", "pendingQuotations"];
 
 type Stats = {
   totalClients?: number;
   activeWorkOrders: number;
+  draftWorkOrders: number;
   pendingQuotations: number;
   overdueInvoices?: number;
 };
@@ -42,7 +60,7 @@ type Props = {
   /**
    * True when the viewer is a supervisor. Switches the layout to a
    * 2-card personal view (Mis OTs / Mis Cotizaciones) and hides the
-   * global totals. Defaults to admin / full view.
+   * global totals + drafts awaiting review. Defaults to admin / full view.
    */
   scoped?: boolean;
 };
@@ -50,9 +68,9 @@ type Props = {
 export function DashboardKPIs({ stats, scoped = false }: Props) {
   const keys: KPIKey[] = scoped
     ? SCOPED_VISIBLE_KEYS
-    : ["totalClients", "activeWorkOrders", "pendingQuotations", "overdueInvoices"];
+    : ADMIN_KEYS;
 
-  const gridCols = scoped ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4";
+  const gridCols = scoped ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-5";
 
   return (
     <div className={`grid grid-cols-1 ${gridCols} gap-4`}>
