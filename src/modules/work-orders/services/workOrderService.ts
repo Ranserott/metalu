@@ -216,5 +216,5 @@ export async function updateWorkOrderStatus(id: string, status: string) {
 
 export async function generateWorkOrderNumber() {
   const count = await prisma.workOrder.count();
-  return `TRAB-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
+  return String(count + 1).padStart(6, "0");
 }
