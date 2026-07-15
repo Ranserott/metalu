@@ -320,13 +320,13 @@ export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
           <View style={styles.headerRight}>
             <Text style={styles.title}>TRABAJO N°{workOrder.number}</Text>
             <Text style={styles.companyName}>{COMPANY.name}</Text>
+            <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
             <Text style={styles.companyLine}>
               {COMPANY.address}  *  {COMPANY.neighborhood}
             </Text>
             <Text style={styles.companyLine}>
               FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
             </Text>
-            <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
             <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
           </View>
         </View>
