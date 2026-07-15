@@ -248,6 +248,7 @@ export function ClientTable({ data }: { data: Client[] }) {
         clientId={editClient?.id}
         editMode={editClient !== null}
         parentOptions={data}
+        onSaved={() => router.refresh()}
       />
 
       <ClientDetailModal

@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ClientSchema, ClientInput } from "../validations/clientSchemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, User, MapPin, FileText, DollarSign, Calendar, Save, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, User, MapPin, FileText, DollarSign, Calendar, Save, X, ChevronDown, Check } from "lucide-react";
 
 type ParentClientOption = {
   id: string;
@@ -23,9 +23,10 @@ type ClientFormProps = {
   clientId?: string;
   editMode?: boolean;
   parentOptions: ParentClientOption[];
+  onSaved?: () => void;
 };
 
-export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, clientId, editMode, parentOptions }: ClientFormProps) {
+export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, clientId, editMode, parentOptions, onSaved }: ClientFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<ClientInput>({
     resolver: zodResolver(ClientSchema) as any,
@@ -52,6 +53,7 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, client
           body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error("Error al actualizar el cliente");
+        onSaved?.();
       } else {
         await onSubmit(data);
       }
@@ -134,24 +136,12 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, client
                       name="parentClientId"
                       control={form.control}
                       render={({ field }) => (
-                        <Select
-                          value={field.value ?? "NONE"}
-                          onValueChange={(value) => field.onChange(value === "NONE" ? null : value)}
-                        >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Sin empresa padre" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="NONE">Sin empresa padre</SelectItem>
-                            {parentOptions
-                              .filter((option) => option.id !== clientId)
-                              .map((option) => (
-                                <SelectItem key={option.id} value={option.id}>
-                                  {option.name} — {option.code}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
+                        <ParentClientPicker
+                          value={field.value ?? null}
+                          onChange={(id) => field.onChange(id)}
+                          options={parentOptions}
+                          excludeId={clientId}
+                        />
                       )}
                     />
                   </div>
@@ -300,5 +290,94 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, client
         </form>
       </div>
     </div>
+  );
+}
+
+function ParentClientPicker({
+  value,
+  onChange,
+  options,
+  excludeId,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+  options: ParentClientOption[];
+  excludeId?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const selected = options.find((o) => o.id === value) ?? null;
+  const q = search.trim().toLowerCase();
+  const filtered = options.filter((o) => {
+    if (o.id === excludeId) return false;
+    if (!q) return true;
+    return (
+      o.name.toLowerCase().includes(q) ||
+      o.code.toLowerCase().includes(q)
+    );
+  });
+
+  function pick(id: string | null) {
+    onChange(id);
+    setOpen(false);
+    setSearch("");
+  }
+
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch(""); }}>
+      <PopoverTrigger
+        className="w-full flex items-center justify-between text-sm border border-input bg-transparent rounded-md px-3 py-2 hover:bg-accent/30 transition-colors focus:outline-none focus:ring-1 focus:ring-[var(--theme-dark)]"
+      >
+        <span className={selected ? "text-gray-800 truncate text-left" : "text-gray-400 truncate text-left"}>
+          {selected ? `${selected.name} — ${selected.code}` : "Sin empresa padre"}
+        </span>
+        <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
+        <div className="border-b p-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre o RUT..."
+              className="pl-7 h-8 text-sm border-0 focus-visible:ring-0 shadow-none"
+            />
+          </div>
+        </div>
+        <div className="max-h-64 overflow-y-auto py-1">
+          <button
+            type="button"
+            onClick={() => pick(null)}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center justify-between"
+          >
+            <span className="text-gray-500 italic">Sin empresa padre</span>
+            {value === null && <Check className="h-4 w-4 text-[var(--theme-dark)]" />}
+          </button>
+          {filtered.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-4">Sin resultados</p>
+          ) : (
+            filtered.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => pick(o.id)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-800 truncate">{o.name}</div>
+                    <div className="text-xs text-gray-500">{o.code}</div>
+                  </div>
+                  {value === o.id && <Check className="h-4 w-4 text-[var(--theme-dark)] shrink-0" />}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
