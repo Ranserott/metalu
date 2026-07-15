@@ -196,7 +196,7 @@ export function QuotationForm({ onSubmit, defaultValues, editMode }: Props) {
         <td className="p-2">
           <Input
             type="number"
-            step="0.01"
+            step="1"
             min="0"
             {...register(`items.${idx}.quantity` as const, {
               valueAsNumber: true,

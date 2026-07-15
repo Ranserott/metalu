@@ -59,6 +59,7 @@ type ItemRow = {
 type GuiaRow = {
   numero: string;
   total: number;
+  otNumber?: string;
 };
 
 type ClientOpt = { id: string; name: string; code: string };
@@ -69,6 +70,12 @@ function emptyItems(): ItemRow[] {
 
 function emptyGuias(): GuiaRow[] {
   return [{ numero: "", total: 0 }];
+}
+
+function parseGuiaTotal(v: unknown): number {
+  if (typeof v === "number") return v;
+  const n = parseFloat(String(v ?? ""));
+  return Number.isFinite(n) ? n : 0;
 }
 
 export function InvoiceForm({
@@ -99,14 +106,62 @@ export function InvoiceForm({
   // ---- UI state ----
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guiaError, setGuiaError] = useState<string | null>(null);
   const [clients, setClients] = useState<ClientOpt[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientModalSearch, setClientModalSearch] = useState("");
+  const [otByGuia, setOtByGuia] = useState<
+    Map<
+      string,
+      { clientId: string; number: string; total: number; materials: ItemRow[] }
+    >
+  >(new Map());
 
   useEffect(() => {
     fetch("/api/clients?activeOnly=true")
       .then((r) => r.json())
       .then((d) => setClients(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/work-orders")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!Array.isArray(d)) return;
+        const map = new Map<
+          string,
+          {
+            clientId: string;
+            number: string;
+            total: number;
+            materials: ItemRow[];
+          }
+        >();
+        for (const wo of d) {
+          if (
+            wo &&
+            typeof wo.nroGuia === "string" &&
+            wo.nroGuia.trim() !== "" &&
+            typeof wo.clientId === "string" &&
+            wo.clientId !== ""
+          ) {
+            const rawMaterials = Array.isArray(wo.materials) ? wo.materials : [];
+            const materials: ItemRow[] = rawMaterials.map((m: any) => ({
+              description: String(m.material ?? ""),
+              quantity: parseGuiaTotal(m.quantity),
+              unitPrice: parseGuiaTotal(m.unitPrice),
+            }));
+            map.set(wo.nroGuia.trim(), {
+              clientId: wo.clientId,
+              number: String(wo.number ?? ""),
+              total: parseGuiaTotal(wo.total),
+              materials,
+            });
+          }
+        }
+        setOtByGuia(map);
+      })
       .catch(() => {});
   }, []);
 
@@ -184,6 +239,7 @@ export function InvoiceForm({
     setItems(emptyItems());
     setGuias(emptyGuias());
     setError(null);
+    setGuiaError(null);
   }
 
   function handleBorrar() {
@@ -217,6 +273,7 @@ export function InvoiceForm({
         .map((g) => ({
           numero: g.numero,
           total: g.total,
+          otNumber: g.otNumber,
         }));
 
       const res = await fetch("/api/invoices", {
@@ -498,6 +555,7 @@ export function InvoiceForm({
                     <tr className="text-left text-muted-foreground">
                       <th className="px-2 py-1 w-8">#</th>
                       <th className="px-2 py-1">NÚMERO</th>
+                      <th className="px-2 py-1 w-28">OT</th>
                       <th className="px-2 py-1 w-24 text-right">TOTAL</th>
                       <th className="px-2 py-1 w-8"></th>
                     </tr>
@@ -512,12 +570,61 @@ export function InvoiceForm({
                           <Input
                             id={`guia-numero-${idx}`}
                             value={g.numero}
-                            onChange={(e) =>
-                              updateGuia(idx, { numero: e.target.value })
-                            }
+                            onChange={(e) => {
+                              updateGuia(idx, { numero: e.target.value });
+                              if (guiaError) setGuiaError(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key !== "Enter") return;
+                              e.preventDefault();
+                              const numeroTrim = g.numero.trim();
+                              if (!numeroTrim) return;
+                              if (!clientId) {
+                                setGuiaError(
+                                  "Seleccioná el cliente antes de buscar una guía",
+                                );
+                                return;
+                              }
+                              const match = otByGuia.get(numeroTrim);
+                              if (!match) {
+                                setGuiaError(
+                                  `La guía "${numeroTrim}" no existe`,
+                                );
+                                return;
+                              }
+                              if (match.clientId !== clientId) {
+                                const owner = clients.find(
+                                  (c) => c.id === match.clientId,
+                                );
+                                const ownerName = owner?.name ?? "otro cliente";
+                                setGuiaError(
+                                  `La guía "${numeroTrim}" pertenece a ${ownerName}`,
+                                );
+                                return;
+                              }
+                              setGuiaError(null);
+                              updateGuia(idx, {
+                                otNumber: match.number,
+                                total: match.total,
+                              });
+                              setItems(
+                                match.materials.length > 0
+                                  ? match.materials
+                                  : emptyItems(),
+                              );
+                            }}
                             placeholder="..."
                             className="h-7 text-xs"
                           />
+                        </td>
+                        <td className="px-2 py-1 font-mono text-xs whitespace-nowrap">
+                          {g.otNumber ? (
+                            <span className="inline-flex items-center rounded bg-[#14679C]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#14679C]">
+                              {g.otNumber}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="px-1 py-1">
                           <Input
@@ -551,6 +658,14 @@ export function InvoiceForm({
               </div>
             </div>
           </Card>
+          {guiaError && (
+            <div
+              role="alert"
+              className="mt-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {guiaError}
+            </div>
+          )}
         </div>
 
         {/* Section 4: Detalle de Productos / Servicios */}

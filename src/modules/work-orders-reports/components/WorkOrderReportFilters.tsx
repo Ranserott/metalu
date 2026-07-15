@@ -19,9 +19,9 @@ import type {
 } from "../types/report";
 
 const STATUS_OPTIONS = [
+  { value: "DRAFT", label: "Borrador" },
   { value: "TODO", label: "Pendiente" },
   { value: "IN_PROGRESS", label: "En progreso" },
-  { value: "QUALITY_CHECK", label: "Control de calidad" },
   { value: "COMPLETED", label: "Completado" },
 ] as const;
 

@@ -10,7 +10,8 @@ function formatNumber(n: number): string {
 }
 
 function formatQuantity(n: number): string {
-  return n.toFixed(2);
+  const num = Number.isFinite(n) ? n : 0;
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
 }
 
 function formatDate(d: Date | string): string {

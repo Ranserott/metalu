@@ -34,7 +34,7 @@ const TYPE_LABEL: Record<string, string> = {
   CREDIT_NOTE: "NOTA DE CRÉDITO",
 };
 
-type Guia = { numero: string; total: number };
+type Guia = { numero: string; total: number; otNumber?: string };
 type Item = {
   id?: string;
   description: string;
@@ -91,6 +91,7 @@ function parseGuias(raw: string | null | undefined): Guia[] {
         .map((g) => ({
           numero: String(g.numero ?? ""),
           total: toNum(g.total),
+          otNumber: g.otNumber ? String(g.otNumber) : undefined,
         }));
     }
   } catch {
@@ -266,6 +267,7 @@ export function InvoiceDetailView({
                       <tr className="text-left text-muted-foreground">
                         <th className="px-2 py-1 w-8">#</th>
                         <th className="px-2 py-1">NÚMERO</th>
+                        <th className="px-2 py-1 w-28">OT</th>
                         <th className="px-2 py-1 w-24 text-right">TOTAL</th>
                       </tr>
                     </thead>
@@ -274,6 +276,15 @@ export function InvoiceDetailView({
                         <tr key={idx} className="border-t">
                           <td className="px-2 py-1 text-muted-foreground">{idx + 1}</td>
                           <td className="px-2 py-1 font-mono">{g.numero || "—"}</td>
+                          <td className="px-2 py-1 font-mono whitespace-nowrap">
+                            {g.otNumber ? (
+                              <span className="inline-flex items-center rounded bg-[#14679C]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#14679C]">
+                                {g.otNumber}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
                           <td className="px-2 py-1 text-right font-mono">
                             {clp.format(g.total)}
                           </td>

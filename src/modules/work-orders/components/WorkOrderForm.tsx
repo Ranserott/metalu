@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Trash, Printer, Save, FileText, LogOut, UserPlus } from "lucide-react";
+import { Plus, Search, Trash, Printer, Save, FileText, LogOut, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,7 @@ import { ClientModal } from "@/modules/quotations/components/ClientModal";
 import { QuotationModal } from "@/modules/quotations/components/QuotationModal";
 import { EncargadoSelector } from "@/modules/encargados/components/EncargadoSelector";
 import { WorkOrderItemInput } from "../validations/workOrderSchemas";
+import { WorkOrder } from "../types/workOrder";
 
 type ClientInfo = { id: string; name: string };
 
@@ -47,7 +48,7 @@ type WorkOrderFormProps = {
     }>;
   } | null;
   editMode?: boolean;
-  onSubmit: (data: Record<string, any>, items: WorkOrderItemInput[]) => Promise<void>;
+  onSubmit: (data: Record<string, any>, items: WorkOrderItemInput[]) => Promise<WorkOrder | null>;
   onCancel: () => void;
 };
 
@@ -101,6 +102,7 @@ function mapQuotationToState(q: any) {
 
 export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, onCancel }: WorkOrderFormProps) {
   const [submitting, setSubmitting] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [quotationModalOpen, setQuotationModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientInfo | null>(null);
@@ -304,67 +306,127 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
   const iva = subtotalAfecto * 0.19;
   const total = subtotalAfecto + iva;
 
-  async function handleSave() {
+  function buildPayload(status: "DRAFT" | "IN_PROGRESS" = "IN_PROGRESS"): { payload: Record<string, any>; itemsPayload: WorkOrderItemInput[] } | null {
     if (!selectedClient) {
       alert("Debe seleccionar un cliente");
-      return;
+      return null;
     }
     if (!titulo.trim()) {
       alert("Debe ingresar un título");
-      return;
+      return null;
     }
+
+    const payload: Record<string, any> = {
+      ...(editMode && initialData?.id ? { id: initialData.id } : {}),
+      number,
+      clientId: selectedClient.id,
+      title: titulo,
+      status,
+      priority: "MEDIUM",
+      dueDate: fechaEntrega || new Date().toISOString().split("T")[0],
+      rut: rut || null,
+      razonSocial: razonSocial || null,
+      entregadoPor: entregadoPor || null,
+      celular: celular || null,
+      fechaTrabajo: fechaTrabajo || null,
+      local: local || null,
+      encargado: encargadoName || null,
+      encargadoId: encargadoId || null,
+      condicionesPago: condicionesPago || null,
+      nroFactura: nroFactura || null,
+      nroGuia: nroGuia || null,
+      tipoOC: tipoOC || null,
+      nroOrdenCompra: nroOrdenCompra || null,
+      fechaEntrega: fechaEntrega || null,
+      plazoDias: plazoDias === "" ? null : Number(plazoDias),
+      neto: neto.toFixed(2),
+      descuentoPorcentaje: descuentoPorcentaje === "" ? null : Number(descuentoPorcentaje),
+      subtotalAfecto: subtotalAfecto.toFixed(2),
+      iva: iva.toFixed(2),
+      total: total.toFixed(2),
+      description: observaciones || null,
+      quotationId: nroCotizacion || null,
+    };
+
+    const itemsPayload: WorkOrderItemInput[] = items
+      .filter((it) => it.description.trim() !== "")
+      .map((it) => ({
+        material: it.description,
+        quantity: it.quantity,
+        unit: "UN",
+        unitPrice: it.unitPrice,
+        total: it.quantity * it.unitPrice,
+      }));
+
+    return { payload, itemsPayload };
+  }
+
+  async function handleSave(status: "DRAFT" | "IN_PROGRESS" = "IN_PROGRESS") {
+    const built = buildPayload(status);
+    if (!built) return;
+    const { payload, itemsPayload } = built;
 
     setSubmitting(true);
     try {
-      const payload: Record<string, any> = {
-        ...(editMode && initialData?.id ? { id: initialData.id } : {}),
-        number,
-        clientId: selectedClient.id,
-        title: titulo,
-        status: "IN_PROGRESS",
-        priority: "MEDIUM",
-        dueDate: fechaEntrega || new Date().toISOString().split("T")[0],
-        rut: rut || null,
-        razonSocial: razonSocial || null,
-        entregadoPor: entregadoPor || null,
-        celular: celular || null,
-        fechaTrabajo: fechaTrabajo || null,
-        local: local || null,
-        encargado: encargadoName || null,
-        encargadoId: encargadoId || null,
-        condicionesPago: condicionesPago || null,
-        nroFactura: nroFactura || null,
-        nroGuia: nroGuia || null,
-        tipoOC: tipoOC || null,
-        nroOrdenCompra: nroOrdenCompra || null,
-        fechaEntrega: fechaEntrega || null,
-        plazoDias: plazoDias === "" ? null : Number(plazoDias),
-        neto: neto.toFixed(2),
-        descuentoPorcentaje: descuentoPorcentaje === "" ? null : Number(descuentoPorcentaje),
-        subtotalAfecto: subtotalAfecto.toFixed(2),
-        iva: iva.toFixed(2),
-        total: total.toFixed(2),
-        description: observaciones || null,
-        quotationId: nroCotizacion || null,
-      };
-
-      const itemsPayload: WorkOrderItemInput[] = items
-        .filter((it) => it.description.trim() !== "")
-        .map((it) => ({
-          material: it.description,
-          quantity: it.quantity,
-          unit: "UN",
-          unitPrice: it.unitPrice,
-          total: it.quantity * it.unitPrice,
-        }));
-
-      await onSubmit(payload, itemsPayload);
-      resetForm();
+      const saved = await onSubmit(payload, itemsPayload);
+      if (saved) {
+        resetForm();
+      }
     } catch (err) {
       console.error("[WorkOrderForm] save error:", err);
       alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePrint() {
+    const built = buildPayload();
+    if (!built) return;
+    const { payload, itemsPayload } = built;
+
+    setPrinting(true);
+    try {
+      // Save first (modal will close via parent). Capture new OT to fetch PDF.
+      const saved = await onSubmit(payload, itemsPayload);
+      if (!saved) return;
+
+      // Fetch PDF from the existing API and trigger browser print dialog
+      const res = await fetch(`/api/work-orders/${saved.id}/pdf`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Error al generar el PDF");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (err) {
+          console.error("[WorkOrderForm] print failed:", err);
+        } finally {
+          setTimeout(() => {
+            iframe.remove();
+            URL.revokeObjectURL(url);
+          }, 1000);
+        }
+      };
+    } catch (err) {
+      console.error("[WorkOrderForm] print error:", err);
+      alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setPrinting(false);
     }
   }
 
@@ -816,7 +878,16 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
         <div className="flex gap-2">
           <Button
             type="button"
-            onClick={handleSave}
+            variant="outline"
+            onClick={() => void handleSave("DRAFT")}
+            disabled={submitting}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Guardar Borrador
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void handleSave()}
             disabled={submitting}
             className="bg-[var(--theme-dark)] hover:bg-[var(--theme-darker)] text-white"
           >
@@ -828,9 +899,13 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, onSubmit, 
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline">
-            <Printer className="w-4 h-4 mr-2" />
-            Imprimir
+          <Button type="button" variant="outline" onClick={handlePrint} disabled={printing || submitting}>
+            {printing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Printer className="w-4 h-4 mr-2" />
+            )}
+            {printing ? "Preparando..." : "Imprimir"}
           </Button>
           <Button type="button" variant="outline" className="text-red-500 border-red-300 hover:bg-red-50">
             <Trash className="w-4 h-4 mr-2" />

@@ -20,23 +20,23 @@ import { WORK_ORDER_TABLE_FILTERS } from "../constants/tableFilters";
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
 const STATUS_OPTIONS = [
+  { value: "DRAFT", label: "Borrador" },
   { value: "TODO", label: "Pendiente" },
   { value: "IN_PROGRESS", label: "En Progreso" },
-  { value: "QUALITY_CHECK", label: "Control de Calidad" },
   { value: "COMPLETED", label: "Completado" },
 ] as const;
 
 const statusLabels: Record<string, string> = {
+  DRAFT: "Borrador",
   TODO: "Pendiente",
   IN_PROGRESS: "En Progreso",
-  QUALITY_CHECK: "Control de Calidad",
   COMPLETED: "Completado",
 };
 
 const statusColors: Record<string, string> = {
+  DRAFT: "bg-slate-200 text-slate-700",
   TODO: "bg-gray-100 text-gray-800",
   IN_PROGRESS: "bg-blue-100 text-blue-800",
-  QUALITY_CHECK: "bg-yellow-100 text-yellow-800",
   COMPLETED: "bg-green-100 text-green-800",
 };
 

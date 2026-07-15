@@ -108,7 +108,10 @@ export default function WorkOrdersPage() {
     }
   }
 
-  async function handleSubmit(payload: Record<string, any>, items: WorkOrderItemInput[]) {
+  async function handleSubmit(
+    payload: Record<string, any>,
+    items: WorkOrderItemInput[],
+  ): Promise<WorkOrder | null> {
     const isEdit = !!payload.id;
     const url = isEdit ? `/api/work-orders/${payload.id}` : "/api/work-orders";
     const method = isEdit ? "PUT" : "POST";
@@ -119,14 +122,17 @@ export default function WorkOrdersPage() {
       body: JSON.stringify({ ...payload, items }),
     });
     if (res.ok) {
+      const saved = (await res.json().catch(() => null)) as WorkOrder | null;
       await fetchWorkOrders();
       setModalOpen(false);
       setEditData(undefined);
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      console.error("[work-orders page] save error:", errorData);
-      alert(`Error al guardar: ${JSON.stringify(errorData)}`);
+      return saved;
     }
+
+    const errorData = await res.json().catch(() => ({}));
+    console.error("[work-orders page] save error:", errorData);
+    alert(`Error al guardar: ${JSON.stringify(errorData)}`);
+    return null;
   }
 
   if (loading) {
