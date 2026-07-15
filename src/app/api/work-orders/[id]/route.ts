@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { getWorkOrderById, updateWorkOrder, deleteWorkOrder } from "@/modules/work-orders/services/workOrderService";
+import { getWorkOrderById, updateWorkOrder, deleteWorkOrder, WorkOrderConflictError } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderSchema } from "@/modules/work-orders/validations/workOrderSchemas";
 import { canMutateRecord } from "@/lib/auth/recordPermissions";
 
@@ -37,6 +37,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const result = await updateWorkOrder(id, parsed.data, items || []);
     return NextResponse.json(result);
   } catch (error: any) {
+    if (error instanceof WorkOrderConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

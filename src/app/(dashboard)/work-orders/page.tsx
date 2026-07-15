@@ -141,7 +141,11 @@ export default function WorkOrdersPage() {
 
     const errorData = await res.json().catch(() => ({}));
     console.error("[work-orders page] save error:", errorData);
-    alert(`Error al guardar: ${JSON.stringify(errorData)}`);
+    const message =
+      typeof errorData.error === "string"
+        ? errorData.error
+        : `Error al guardar: ${JSON.stringify(errorData)}`;
+    alert(message);
     return null;
   }
 

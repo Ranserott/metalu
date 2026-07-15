@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { getWorkOrders, createWorkOrder } from "@/modules/work-orders/services/workOrderService";
+import { getWorkOrders, createWorkOrder, WorkOrderConflictError } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderSchema } from "@/modules/work-orders/validations/workOrderSchemas";
 import { prepareWorkOrderCreate } from "@/lib/auth/recordPermissions";
 
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
     const result = await createWorkOrder(parsed.data, prep.userId, items || []);
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
+    if (error instanceof WorkOrderConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     console.error("[POST /api/work-orders] create error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
