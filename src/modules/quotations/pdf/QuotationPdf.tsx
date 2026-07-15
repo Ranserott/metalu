@@ -56,6 +56,7 @@ type Item = {
   quantity: number | string | DecimalLike;
   unitPrice: number | string | DecimalLike;
   total: number | string | DecimalLike;
+  type: "MATERIAL" | "WORK";
 };
 
 type Props = {
@@ -65,6 +66,7 @@ type Props = {
     descripcionTrabajo?: string | null;
     plazoEntrega?: string | null;
     atencion?: string | null;
+    area?: string | null;
     client: {
       id: string;
       name: string;
@@ -165,6 +167,12 @@ const styles = StyleSheet.create({
     borderColor: "#111",
     marginBottom: 8,
   },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 700,
+    marginTop: 10,
+    marginBottom: 4,
+  },
   table: {
     borderTop: 1,
     borderLeft: 1,
@@ -257,7 +265,10 @@ const styles = StyleSheet.create({
 
 export function QuotationPdf({ quotation, logoSrc }: Props) {
   const items = quotation.items ?? [];
-  const itemsTotal = items.reduce((acc, i) => acc + toNum(i.total), 0);
+  const materials = items.filter((i) => i.type === "MATERIAL");
+  const works = items.filter((i) => i.type === "WORK");
+  const materialsTotal = materials.reduce((acc, i) => acc + toNum(i.total), 0);
+  const worksTotal = works.reduce((acc, i) => acc + toNum(i.total), 0);
 
   const subtotal = toNum(quotation.subtotal);
   const tax = toNum(quotation.tax);
@@ -348,8 +359,18 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
           ))}
         </View>
 
-        {/* DESCRIPCIÓN BOX */}
+        {/* DESCRIPCIÓN BOX — Área + Descripción */}
         <View style={styles.descripcionBox}>
+          <View style={styles.boxFieldRow}>
+            <View style={[styles.cell, styles.cellLabel]}>
+              <Text style={styles.cellLabelText}>Área:</Text>
+            </View>
+            <View style={[styles.cell, { width: "78%" }]}>
+              <Text style={styles.cellValueText}>
+                {quotation.area || "—"}
+              </Text>
+            </View>
+          </View>
           <View style={styles.boxFieldRowLast}>
             <View style={[styles.cell, styles.cellLabel]}>
               <Text style={styles.cellLabelText}>Descripción:</Text>
@@ -362,7 +383,8 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
           </View>
         </View>
 
-        {/* ITEMS TABLE — single table (MATERIAL + WORK combined) */}
+        {/* I. DETALLE DE MATERIALES */}
+        <Text style={styles.sectionTitle}>I. DETALLE DE MATERIALES</Text>
         <View style={styles.table}>
           <View style={[styles.tRow, styles.tableHeaderRow]}>
             <Text style={[styles.tCell, styles.cItem, styles.tableHeaderCell]}>CANT</Text>
@@ -374,12 +396,12 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
               TOTAL
             </Text>
           </View>
-          {items.length === 0 ? (
+          {materials.length === 0 ? (
             <View style={styles.tRow}>
               <Text style={[styles.tCell, { width: "100%" }]}>—</Text>
             </View>
           ) : (
-            items.map((it, idx) => (
+            materials.map((it, idx) => (
               <View style={styles.tRow} key={it.id ?? idx}>
                 <Text style={[styles.tCell, styles.cItem]}>{formatQuantity(toNum(it.quantity))}</Text>
                 <Text style={[styles.tCell, styles.cDet]}>{it.description}</Text>
@@ -394,9 +416,48 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
           )}
           <View style={styles.totalRow}>
             <Text style={{ fontWeight: 700, marginRight: 8 }}>
-              Total {items.length}
+              Total {materials.length}
             </Text>
-            <Text style={{ fontWeight: 700 }}>{formatCLP(itemsTotal)}</Text>
+            <Text style={{ fontWeight: 700 }}>{formatCLP(materialsTotal)}</Text>
+          </View>
+        </View>
+
+        {/* II. DETALLE DE TRABAJOS REALIZADOS */}
+        <Text style={styles.sectionTitle}>II. DETALLE DE TRABAJOS REALIZADOS</Text>
+        <View style={styles.table}>
+          <View style={[styles.tRow, styles.tableHeaderRow]}>
+            <Text style={[styles.tCell, styles.cItem, styles.tableHeaderCell]}>CANT</Text>
+            <Text style={[styles.tCell, styles.cDet, styles.tableHeaderCell]}>DETALLE</Text>
+            <Text style={[styles.tCell, styles.cPrice, styles.tableHeaderCell, { textAlign: "right" }]}>
+              P. UNITARIO
+            </Text>
+            <Text style={[styles.tCell, styles.cTotal, styles.tCellLast, styles.tableHeaderCell, { textAlign: "right" }]}>
+              TOTAL
+            </Text>
+          </View>
+          {works.length === 0 ? (
+            <View style={styles.tRow}>
+              <Text style={[styles.tCell, { width: "100%" }]}>—</Text>
+            </View>
+          ) : (
+            works.map((it, idx) => (
+              <View style={styles.tRow} key={it.id ?? idx}>
+                <Text style={[styles.tCell, styles.cItem]}>{formatQuantity(toNum(it.quantity))}</Text>
+                <Text style={[styles.tCell, styles.cDet]}>{it.description}</Text>
+                <Text style={[styles.tCell, styles.cPrice, { textAlign: "right" }]}>
+                  {formatCLP(toNum(it.unitPrice))}
+                </Text>
+                <Text style={[styles.tCell, styles.cTotal, styles.tCellLast, { textAlign: "right" }]}>
+                  {formatCLP(toNum(it.total))}
+                </Text>
+              </View>
+            ))
+          )}
+          <View style={styles.totalRow}>
+            <Text style={{ fontWeight: 700, marginRight: 8 }}>
+              Total {works.length}
+            </Text>
+            <Text style={{ fontWeight: 700 }}>{formatCLP(worksTotal)}</Text>
           </View>
         </View>
 

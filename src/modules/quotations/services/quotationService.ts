@@ -122,5 +122,5 @@ export async function deleteQuotation(id: string) {
 
 export async function generateQuotationNumber() {
   const count = await prisma.quotation.count();
-  return `COT-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
+  return String(count + 1).padStart(6, "0");
 }
