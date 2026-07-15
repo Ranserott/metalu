@@ -93,16 +93,19 @@
   --theme-light: #4FB5E0;
   --theme-primary-tint: rgba(20, 103, 156, 0.07);
 
-  /* Font size preference (0.9x – 1.1x, 5 steps) */
+  /* Font size preference (0.9x – 1.1x, 5 steps). Value is overridden by
+     html[data-font-scale] selectors below (placed at top level so they
+     compile to a valid html[...] selector instead of the broken
+     `:root html[...]` descendant that would result from nesting). */
   --font-scale: 1;
   font-size: calc(16px * var(--font-scale));
-
-  html[data-font-scale="0.90"] { font-size: 14.4px; }
-  html[data-font-scale="0.95"] { font-size: 15.2px; }
-  html[data-font-scale="1.00"] { font-size: 16px; }
-  html[data-font-scale="1.05"] { font-size: 16.8px; }
-  html[data-font-scale="1.10"] { font-size: 17.6px; }
 }
+
+html[data-font-scale="0.90"] { font-size: 14.4px; }
+html[data-font-scale="0.95"] { font-size: 15.2px; }
+html[data-font-scale="1.00"] { font-size: 16px; }
+html[data-font-scale="1.05"] { font-size: 16.8px; }
+html[data-font-scale="1.10"] { font-size: 17.6px; }
 
 .dark {
   --background: #101D2D;
