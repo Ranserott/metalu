@@ -74,6 +74,8 @@ type Props = {
       address?: string | null;
       city?: string | null;
     };
+    razonSocialSnapshot?: string | null;
+    rutSnapshot?: string | null;
     createdBy?: { id: string; name: string | null; phone?: string | null } | null;
     items: Item[];
     subtotal: number | string | DecimalLike;
@@ -293,8 +295,8 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
   const neto = Math.max(subtotal - discountAmount, 0);
 
   const cliente = quotation.client;
-  const clienteName = cliente?.name ?? "—";
-  const rut = cliente?.code ?? "";
+  const clienteName = quotation.razonSocialSnapshot || cliente?.name || "—";
+  const rut = quotation.rutSnapshot || cliente?.code || "";
   const direccion = cliente?.address ?? "—";
   const ciudad = cliente?.city ?? "—";
 

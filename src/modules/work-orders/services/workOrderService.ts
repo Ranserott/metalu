@@ -133,6 +133,11 @@ export async function getWorkOrderById(id: string) {
 export async function createWorkOrder(data: WorkOrderInput, userId: string, items: WorkOrderItemInput[] = []) {
   const number = data.number?.trim() ? data.number : await generateWorkOrderNumber();
   const normalized = parseDecimals(normalizeDates(data));
+  const client = await prisma.client.findUnique({
+    where: { id: normalized.clientId, deletedAt: null },
+    select: { name: true, code: true },
+  });
+  if (!client) throw new Error("Cliente no encontrado");
 
   await assertNoInvoiceGuideConflict({
     clientId: normalized.clientId,
@@ -143,6 +148,8 @@ export async function createWorkOrder(data: WorkOrderInput, userId: string, item
   return await prisma.workOrder.create({
     data: {
       ...normalized,
+      rut: normalized.rut || client.code,
+      razonSocial: normalized.razonSocial || client.name,
       number,
       createdById: userId,
       materials: {

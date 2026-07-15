@@ -11,7 +11,7 @@ import { EncargadoSelector } from "@/modules/encargados/components/EncargadoSele
 import { WorkOrderItemInput } from "../validations/workOrderSchemas";
 import { WorkOrder } from "../types/workOrder";
 
-type ClientInfo = { id: string; name: string };
+type ClientInfo = { id: string; name: string; code?: string; rut?: string };
 
 type WorkOrderFormProps = {
   initialNumber?: string;
@@ -208,6 +208,8 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, forceDraft
 
   function handleClientSelect(client: ClientInfo) {
     setSelectedClient(client);
+    setRut(client.code ?? client.rut ?? "");
+    setRazonSocial(client.name);
     setClientModalOpen(false);
   }
 

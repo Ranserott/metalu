@@ -14,6 +14,7 @@ import { Search } from "lucide-react";
 type Client = {
   id: string;
   name: string;
+  code?: string;
   rut?: string;
 };
 
@@ -38,8 +39,8 @@ export function ClientModal({ open, onOpenChange, onSelect }: Props) {
 
   const filtered = clients.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.rut && c.rut.toLowerCase().includes(search.toLowerCase()))
+      (c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.code ?? c.rut)?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -69,7 +70,7 @@ export function ClientModal({ open, onOpenChange, onSelect }: Props) {
                 className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition-colors"
               >
                 <p className="font-medium text-gray-900">{client.name}</p>
-                {client.rut && <p className="text-sm text-gray-500">{client.rut}</p>}
+                {(client.code ?? client.rut) && <p className="text-sm text-gray-500">{client.code ?? client.rut}</p>}
               </button>
             ))}
             {filtered.length === 0 && (
