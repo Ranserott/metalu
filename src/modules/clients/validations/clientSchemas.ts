@@ -13,6 +13,7 @@ export const ClientSchema = z.object({
   oc: z.string().optional(),
   lastPaymentDate: z.string().optional(),
   currentBalance: z.number().optional(),
+  parentClientId: z.string().uuid("Empresa padre inválida").nullable().optional(),
   isActive: z.boolean().default(true),
 });
 

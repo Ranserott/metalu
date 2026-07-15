@@ -103,6 +103,13 @@ model Client {
   deletedAt       DateTime? @map("deleted_at")
   createdById     String?   @map("created_by_id")
 
+  // Self-reference: a "sub-empresa" links back to the parent (original legal entity).
+  // When a company renames/re-RUTs, create a new child Client and link it here.
+  // The original parent stays for historical linkage.
+  parentClientId String? @map("parent_client_id")
+  parent         Client? @relation("ClientHierarchy", fields: [parentClientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children       Client[] @relation("ClientHierarchy")
+
   createdBy     User?                  @relation("ClientCreator", fields: [createdById], references: [id])
   quotations    Quotation[]
   workOrders    WorkOrder[]
@@ -110,6 +117,7 @@ model Client {
   encargados    Encargado[]
   solicitudesOC SolicitudOrdenCompra[]
 
+  @@index([parentClientId])
   @@map("clients")
 }
 
@@ -223,6 +231,11 @@ model Quotation {
   plazoEntrega       String?               @map("plazo_entrega")
   atencion           String?
   area               String?
+  // Snapshot of client name + RUT at quotation-creation time. Independent from
+  // the live `client` relation so the PDF keeps showing the name the company
+  // had when the quotation was issued, even after the client renames itself.
+  razonSocialSnapshot String? @map("razon_social_snapshot")
+  rutSnapshot         String? @map("rut_snapshot")
   createdAt          DateTime              @default(now()) @map("created_at")
   updatedAt          DateTime              @updatedAt @map("updated_at")
   deletedAt          DateTime?             @map("deleted_at")

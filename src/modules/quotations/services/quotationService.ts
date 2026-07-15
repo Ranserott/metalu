@@ -36,6 +36,11 @@ export async function createQuotation(
   const total = data.total ? parseFloat(data.total) : subtotal + tax;
 
   const number = data.number && data.number.trim() ? data.number : await generateQuotationNumber();
+  const client = await prisma.client.findUnique({
+    where: { id: data.clientId, deletedAt: null },
+    select: { name: true, code: true },
+  });
+  if (!client) throw new Error("Cliente no encontrado");
 
   return await prisma.quotation.create({
     data: {
@@ -53,6 +58,8 @@ export async function createQuotation(
       plazoEntrega: data.plazoEntrega,
       atencion: data.atencion,
       area: data.area,
+      razonSocialSnapshot: client.name,
+      rutSnapshot: client.code,
       createdById: userId,
       items: {
         create: items.map((item) => ({
@@ -86,6 +93,19 @@ export async function updateQuotation(
   if (data.discountType) updateData.discountType = data.discountType;
 
   return await prisma.$transaction(async (tx) => {
+    let clientSnapshot: { razonSocialSnapshot?: string; rutSnapshot?: string } = {};
+    if (data.clientId) {
+      const client = await tx.client.findUnique({
+        where: { id: data.clientId, deletedAt: null },
+        select: { name: true, code: true },
+      });
+      if (!client) throw new Error("Cliente no encontrado");
+      clientSnapshot = {
+        razonSocialSnapshot: client.name,
+        rutSnapshot: client.code,
+      };
+    }
+
     await tx.quotationItem.updateMany({
       where: { quotationId: id, deletedAt: null },
       data: { deletedAt: new Date() },
@@ -95,6 +115,7 @@ export async function updateQuotation(
       where: { id },
       data: {
         ...updateData,
+        ...clientSnapshot,
         items: {
           create: items.map((item) => ({
             description: item.description,

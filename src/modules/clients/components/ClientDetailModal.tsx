@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Client, QuotationSummary, InvoiceSummary } from "../types/client";
 import { EncargadoListSection } from "@/modules/encargados/components/EncargadoListSection";
 import {
+  Building2,
   User,
   MapPin,
   FileText,
@@ -132,6 +133,52 @@ export function ClientDetailModal({ open, onOpenChange, clientId }: Props) {
             )}
 
             <Separator />
+
+            <Section icon={Building2} title="Empresa y subempresas">
+              {client.parent ? (
+                <div>
+                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                    Empresa padre
+                  </p>
+                  <p className="text-sm font-semibold text-gray-800">{client.parent.name}</p>
+                  <p className="text-xs text-gray-500">{client.parent.code}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Este cliente es una empresa principal.</p>
+              )}
+
+              <div className="pt-2 border-t">
+                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-2">
+                  Sub-empresas
+                </p>
+                {client.children && client.children.length > 0 ? (
+                  <div className="space-y-2">
+                    {client.children.map((child) => (
+                      <div
+                        key={child.id}
+                        className="flex items-center justify-between gap-3 rounded border px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{child.name}</p>
+                          <p className="text-xs text-gray-500">{child.code}</p>
+                        </div>
+                        <Badge
+                          className={
+                            child.isActive
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : "bg-gray-100 text-gray-800 border-gray-200"
+                          }
+                        >
+                          {child.isActive ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">Sin sub-empresas registradas.</p>
+                )}
+              </div>
+            </Section>
 
             <EncargadoListSection
               clientId={client.id}

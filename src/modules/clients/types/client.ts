@@ -1,3 +1,10 @@
+export type ClientRelationSummary = {
+  id: string;
+  code: string;
+  name: string;
+  isActive?: boolean;
+};
+
 export type Client = {
   id: string;
   code: string;
@@ -12,6 +19,9 @@ export type Client = {
   oc: string | null;
   lastPaymentDate: Date | string | null;
   currentBalance: number | null;
+  parentClientId: string | null;
+  parent?: ClientRelationSummary | null;
+  children?: ClientRelationSummary[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

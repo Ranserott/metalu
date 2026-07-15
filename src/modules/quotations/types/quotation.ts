@@ -3,6 +3,8 @@ export type Quotation = {
   number: string;
   clientId: string;
   client: { id: string; name: string };
+  razonSocialSnapshot?: string | null;
+  rutSnapshot?: string | null;
   createdBy?: { id: string; name: string | null } | null;
   status: string;
   validUntil: Date;

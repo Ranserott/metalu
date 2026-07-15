@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClientSchema, ClientInput } from "../validations/clientSchemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, MapPin, FileText, DollarSign, Calendar, Save, X } from "lucide-react";
+
+type ParentClientOption = {
+  id: string;
+  code: string;
+  name: string;
+};
 
 type ClientFormProps = {
   open: boolean;
@@ -15,16 +22,17 @@ type ClientFormProps = {
   defaultValues?: Partial<ClientInput>;
   clientId?: string;
   editMode?: boolean;
+  parentOptions: ParentClientOption[];
 };
 
-export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, clientId, editMode }: ClientFormProps) {
+export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, clientId, editMode, parentOptions }: ClientFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<ClientInput>({
     resolver: zodResolver(ClientSchema) as any,
     defaultValues: defaultValues || {
       isActive: true, code: "", name: "", contact: "", email: "",
       phone: "", address: "", city: "", notes: "", giro: "", oc: "",
-      lastPaymentDate: "", currentBalance: 0
+      lastPaymentDate: "", currentBalance: 0, parentClientId: null
     },
   });
 
@@ -118,6 +126,33 @@ export function ClientForm({ open, onOpenChange, onSubmit, defaultValues, client
                       {...form.register("giro")}
                       placeholder="Actividad o rubro del cliente"
                       className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Empresa padre (opcional)</label>
+                    <Controller
+                      name="parentClientId"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value ?? "NONE"}
+                          onValueChange={(value) => field.onChange(value === "NONE" ? null : value)}
+                        >
+                          <SelectTrigger className="text-sm">
+                            <SelectValue placeholder="Sin empresa padre" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">Sin empresa padre</SelectItem>
+                            {parentOptions
+                              .filter((option) => option.id !== clientId)
+                              .map((option) => (
+                                <SelectItem key={option.id} value={option.id}>
+                                  {option.name} — {option.code}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
                   </div>
                 </div>

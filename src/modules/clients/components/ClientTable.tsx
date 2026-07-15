@@ -236,6 +236,7 @@ export function ClientTable({ data }: { data: Client[] }) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSubmit={handleCreateClient}
+        parentOptions={data}
       />
 
       <ClientForm
@@ -246,6 +247,7 @@ export function ClientTable({ data }: { data: Client[] }) {
         defaultValues={editClient ?? undefined}
         clientId={editClient?.id}
         editMode={editClient !== null}
+        parentOptions={data}
       />
 
       <ClientDetailModal
