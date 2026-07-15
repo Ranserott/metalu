@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { isSupervisor } from "@/lib/auth/permissions";
 import { updateWorkOrderStatus } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderStatus } from "@/generated/prisma";
 
@@ -24,6 +25,16 @@ export async function PATCH(
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Supervisor is locked to DRAFT world — never allowed to change OT state.
+    // Another role (e.g. Admin, Manager) activates the OT after supervisor
+    // hands off the draft.
+    if (isSupervisor(session.user.roles ?? [])) {
+      return NextResponse.json(
+        { error: "Los supervisores no pueden cambiar el estado de las OTs" },
+        { status: 403 },
+      );
     }
 
     const { id } = await params;

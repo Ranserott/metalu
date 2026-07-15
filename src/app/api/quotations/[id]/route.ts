@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { getQuotationById, updateQuotation, deleteQuotation } from "@/modules/quotations/services/quotationService";
 import { QuotationSchema } from "@/modules/quotations/validations/quotationSchemas";
+import { canMutateRecord } from "@/lib/auth/recordPermissions";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -19,6 +20,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const current = await getQuotationById(id);
+  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const gate = await canMutateRecord(current.status);
+  if (!gate.allowed) return NextResponse.json({ error: gate.error }, { status: gate.status });
+
   const body = await req.json();
   const { items, ...quotationData } = body;
   const parsed = QuotationSchema.partial().safeParse(quotationData);
@@ -39,6 +46,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const current = await getQuotationById(id);
+  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const gate = await canMutateRecord(current.status);
+  if (!gate.allowed) return NextResponse.json({ error: gate.error }, { status: gate.status });
+
   await deleteQuotation(id);
   return NextResponse.json({ success: true });
 }

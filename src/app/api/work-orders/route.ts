@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { getWorkOrders, createWorkOrder } from "@/modules/work-orders/services/workOrderService";
 import { WorkOrderSchema } from "@/modules/work-orders/validations/workOrderSchemas";
+import { prepareWorkOrderCreate } from "@/lib/auth/recordPermissions";
 
 export async function GET() {
   const session = await auth();
@@ -12,12 +13,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const body = await req.json();
-  console.log("[POST /api/work-orders] body:", body);
-  const { items, ...workOrderData } = body;
+  const prep = await prepareWorkOrderCreate(body);
+  if (!prep.ok) return NextResponse.json({ error: prep.error }, { status: prep.status });
+
+  const { items, ...workOrderData } = prep.data;
+  console.log("[POST /api/work-orders] body:", workOrderData);
+
   const parsed = WorkOrderSchema.safeParse(workOrderData);
   if (!parsed.success) {
     console.error("[POST /api/work-orders] validation error:", parsed.error.issues);
@@ -25,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await createWorkOrder(parsed.data, session.user.id, items || []);
+    const result = await createWorkOrder(parsed.data, prep.userId, items || []);
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
     console.error("[POST /api/work-orders] create error:", error);
