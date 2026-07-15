@@ -99,14 +99,15 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   logo: {
-    width: 70,
-    height: 70,
-    marginBottom: 8,
+    width: 45,
+    height: 45,
+    marginTop: 6,
+    marginBottom: 2,
   },
   headerCenter: {
     flexDirection: "column",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   title: {
     fontSize: 20,
