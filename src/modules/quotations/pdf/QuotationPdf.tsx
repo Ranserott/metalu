@@ -257,6 +257,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
   },
+  pageNumber: {
+    position: "absolute",
+    bottom: 24,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 9,
+    color: "#555",
+  },
 });
 
 export function QuotationPdf({ quotation, logoSrc }: Props) {
@@ -509,6 +518,15 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
             <Text style={styles.firmaText}>Firma Cliente</Text>
           </View>
         </View>
+
+        {/* PAGE NUMBER — only shown when the document spans multiple pages */}
+        <Text
+          style={styles.pageNumber}
+          fixed
+          render={({ pageNumber, totalPages }) =>
+            totalPages > 1 ? `Página ${pageNumber} de ${totalPages}` : null
+          }
+        />
       </Page>
     </Document>
   );

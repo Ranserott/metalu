@@ -283,6 +283,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 700,
   },
+  pageNumber: {
+    position: "absolute",
+    bottom: 24,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 9,
+    color: "#555",
+  },
 });
 
 export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
@@ -491,6 +500,15 @@ export function WorkOrderPdf({ workOrder, logoSrc }: Props) {
             NO SE RESPONDE POR TRABAJOS DEJADOS MAS DE 45 DIAS EN EL TALLER
           </Text>
         </View>
+
+        {/* PAGE NUMBER — only shown when the document spans multiple pages */}
+        <Text
+          style={styles.pageNumber}
+          fixed
+          render={({ pageNumber, totalPages }) =>
+            totalPages > 1 ? `Página ${pageNumber} de ${totalPages}` : null
+          }
+        />
       </Page>
     </Document>
   );
