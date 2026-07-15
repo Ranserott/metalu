@@ -6,6 +6,7 @@ import type {
   PaymentRow,
   CreditNoteRow,
   BalanceRow,
+  ReportType,
 } from "../types/report";
 
 const toNumber = (v: unknown): number => (v == null ? 0 : Number(v));
@@ -329,4 +330,43 @@ export async function getBalances(filters: BalancesFilters): Promise<{
     rows,
     totals: { saldoActual: rows.reduce((a, r) => a + r.saldoActual, 0) },
   };
+}
+
+export type RunReportFilters = {
+  clientId?: string;
+  from?: string;
+  to?: string;
+};
+
+export async function runReport(
+  type: ReportType,
+  filters: RunReportFilters
+): Promise<{ rows: unknown[]; totals?: Record<string, number> }> {
+  const fromDate = filters.from ? new Date(filters.from) : undefined;
+  const toDate = filters.to ? new Date(filters.to) : undefined;
+  const baseFilters = {
+    clientId: filters.clientId,
+    from: fromDate,
+    to: toDate,
+  };
+
+  switch (type) {
+    case "cartola":
+      if (!filters.clientId) {
+        throw new Error("cartola requiere clientId");
+      }
+      return getCartola(baseFilters as CartolaFilters);
+    case "pending-invoices":
+      return getPendingInvoices(baseFilters as PendingFilters);
+    case "sales":
+      return getSales(baseFilters as SalesFilters);
+    case "payments":
+      return getPayments(baseFilters as PaymentsFilters);
+    case "credit-notes":
+      return getCreditNotes(baseFilters as CreditNotesFilters);
+    case "balances":
+      return getBalances({ clientId: filters.clientId } as BalancesFilters);
+    default:
+      throw new Error("Tipo de reporte inválido");
+  }
 }
