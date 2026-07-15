@@ -65,7 +65,7 @@ export function FontSizeSelector() {
         aria-label="Tamaño de letra"
       />
 
-      <div className="flex items-end justify-between gap-4 text-muted-foreground">
+      <div className="flex items-end justify-between gap-4 text-muted-foreground" aria-hidden="true">
         <div className="flex flex-col items-center gap-1">
           <span style={{ fontSize: `${0.9 * 16}px` }}>A</span>
           <span className="text-xs">0.9x</span>
