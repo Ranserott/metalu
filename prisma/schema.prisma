@@ -21,22 +21,26 @@ model User {
   deletedAt   DateTime? @map("deleted_at")
   createdById String?   @map("created_by_id")
 
-  createdBy       User?            @relation("CreatedBy", fields: [createdById], references: [id])
-  createdUsers    User[]           @relation("CreatedBy")
-  roles           UserRole[]
-  auditLogs       AuditLog[]
-  activityLogs    ActivityLog[]
-  notifications   Notification[]
+  createdBy     User?          @relation("CreatedBy", fields: [createdById], references: [id])
+  createdUsers  User[]         @relation("CreatedBy")
+  roles         UserRole[]
+  auditLogs     AuditLog[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
 
   // Inverse relations for createdBy from other models
-  createdClients    Client[]         @relation("ClientCreator")
-  createdQuotations Quotation[]      @relation("QuotationCreator")
-  createdSuppliers  Supplier[]       @relation("SupplierCreator")
-  createdWorkOrders WorkOrder[]      @relation("WorkOrderCreator")
-  createdPurchases  Purchase[]       @relation("PurchaseCreator")
-  createdInvoices   Invoice[]        @relation("InvoiceCreator")
-  createdPayments   Payment[]        @relation("PaymentCreator")
-  uploadedFiles     FileAttachment[] @relation("FileUploader")
+  createdClients           Client[]               @relation("ClientCreator")
+  createdQuotations        Quotation[]            @relation("QuotationCreator")
+  createdSuppliers         Supplier[]             @relation("SupplierCreator")
+  createdWorkOrders        WorkOrder[]            @relation("WorkOrderCreator")
+  createdPurchases         Purchase[]             @relation("PurchaseCreator")
+  createdInvoices          Invoice[]              @relation("InvoiceCreator")
+  createdPayments          Payment[]              @relation("PaymentCreator")
+  createdEncargados        Encargado[]            @relation("EncargadoCreator")
+  uploadedFiles            FileAttachment[]       @relation("FileUploader")
+  createdSolicitudes       SolicitudOrdenCompra[] @relation("SolicitudCreator")
+  rejectedSolicitudes      SolicitudOrdenCompra[] @relation("SolicitudRejecter")
+  createdSupplierDocuments SupplierDocument[]     @relation("SupplierDocumentCreator")
 
   @@map("users")
 }
@@ -99,30 +103,130 @@ model Client {
   deletedAt       DateTime? @map("deleted_at")
   createdById     String?   @map("created_by_id")
 
-  createdBy  User?       @relation("ClientCreator", fields: [createdById], references: [id])
-  quotations Quotation[]
-  workOrders WorkOrder[]
-  invoices   Invoice[]
+  createdBy     User?                  @relation("ClientCreator", fields: [createdById], references: [id])
+  quotations    Quotation[]
+  workOrders    WorkOrder[]
+  invoices      Invoice[]
+  encargados    Encargado[]
+  solicitudesOC SolicitudOrdenCompra[]
 
   @@map("clients")
 }
 
+model Encargado {
+  id          String    @id @default(uuid())
+  rut         String    @unique
+  name        String
+  email       String?
+  phone       String?
+  position    String?   @map("position")
+  clientId    String    @map("client_id")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id")
+
+  client     Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy  User?       @relation("EncargadoCreator", fields: [createdById], references: [id])
+  workOrders WorkOrder[]
+
+  @@map("encargados")
+}
+
+model SolicitudOrdenCompra {
+  id            String          @id @default(uuid())
+  number        String          @unique
+  workOrderId   String          @map("work_order_id")
+  clientId      String          @map("client_id")
+  fechaTrabajo  DateTime        @map("fecha_trabajo")
+  fechaEntrega  DateTime        @map("fecha_entrega")
+  diasSinOC     Int             @default(0) @map("dias_sin_oc")
+  solicitud1    DateTime?       @map("solicitud_1")
+  solicitud2    DateTime?       @map("solicitud_2")
+  solicitud3    DateTime?       @map("solicitud_3")
+  notasInternas String?         @map("notas_internas")
+  status        SolicitudStatus @default(SOLICITUD_GENERADA)
+  purchaseId    String?         @unique @map("purchase_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+  createdById   String?         @map("created_by_id")
+
+  // Review fields (paso 2 — admin)
+  supplierId   String?                @map("supplier_id")
+  subtotal     Decimal?               @db.Decimal(12, 2)
+  tax          Decimal?               @db.Decimal(12, 2)
+  total        Decimal?               @db.Decimal(12, 2)
+  discount     Decimal?               @default(0) @db.Decimal(12, 2)
+  discountType SolicitudDiscountType? @default(NONE) @map("discount_type")
+
+  // Rejection fields
+  rejectionReason String?   @map("rejection_reason")
+  rejectedById    String?   @map("rejected_by_id")
+  rejectedAt      DateTime? @map("rejected_at")
+
+  workOrder  WorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  client     Client          @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  supplier   Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchase   Purchase?       @relation("SolicitudPurchase", fields: [purchaseId], references: [id], onDelete: SetNull)
+  createdBy  User?           @relation("SolicitudCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  rejectedBy User?           @relation("SolicitudRejecter", fields: [rejectedById], references: [id], onDelete: SetNull)
+  items      SolicitudItem[]
+
+  @@map("solicitudes_orden_compra")
+}
+
+model SolicitudItem {
+  id          String    @id @default(uuid())
+  solicitudId String    @map("solicitud_id")
+  description String
+  quantity    Decimal   @db.Decimal(10, 2)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  solicitud SolicitudOrdenCompra @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  @@map("solicitud_items")
+}
+
+enum SolicitudStatus {
+  SOLICITUD_GENERADA
+  EN_REVISION
+  ORDEN_EMITIDA
+  RECHAZADA
+  CANCELADA
+}
+
+enum SolicitudDiscountType {
+  NONE
+  AMOUNT
+  PERCENT
+}
+
 model Quotation {
-  id           String              @id @default(uuid())
-  number       String              @unique
-  clientId     String              @map("client_id")
-  status       QuotationStatus
-  validUntil   DateTime            @map("valid_until")
-  subtotal     Decimal             @db.Decimal(12, 2)
-  tax          Decimal             @db.Decimal(12, 2)
-  total        Decimal             @db.Decimal(12, 2)
-  discount     Decimal?            @default(0) @db.Decimal(12, 2)
-  discountType QuotationDiscountType @default(NONE) @map("discount_type")
-  notes        String?
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @updatedAt @map("updated_at")
-  deletedAt    DateTime?           @map("deleted_at")
-  createdById  String?             @map("created_by_id")
+  id                 String                @id @default(uuid())
+  number             String                @unique
+  clientId           String                @map("client_id")
+  status             QuotationStatus
+  validUntil         DateTime              @map("valid_until")
+  subtotal           Decimal               @db.Decimal(12, 2)
+  tax                Decimal               @db.Decimal(12, 2)
+  total              Decimal               @db.Decimal(12, 2)
+  discount           Decimal?              @default(0) @db.Decimal(12, 2)
+  discountType       QuotationDiscountType @default(NONE) @map("discount_type")
+  notes              String?
+  descripcionTrabajo String?               @map("descripcion_trabajo")
+  plazoEntrega       String?               @map("plazo_entrega")
+  atencion           String?
+  area               String?
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  deletedAt          DateTime?             @map("deleted_at")
+  createdById        String?               @map("created_by_id")
 
   createdBy  User?           @relation("QuotationCreator", fields: [createdById], references: [id])
   client     Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -182,11 +286,49 @@ model Supplier {
   deletedAt   DateTime? @map("deleted_at")
   createdById String?   @map("created_by_id")
 
-  createdBy User?      @relation("SupplierCreator", fields: [createdById], references: [id])
-  purchases Purchase[]
-  payments Payment[]
+  createdBy   User?                  @relation("SupplierCreator", fields: [createdById], references: [id])
+  purchases   Purchase[]
+  payments    Payment[]
+  solicitudes SolicitudOrdenCompra[]
+  documents   SupplierDocument[]
 
   @@map("suppliers")
+}
+
+enum SupplierDocumentType {
+  FACTURA
+  BOLETA
+  PAGARE
+  OTROS
+  CHEQUE
+}
+
+enum SupplierDocumentStatus {
+  PAGADO
+  PENDIENTE
+  CANCELADO
+}
+
+model SupplierDocument {
+  id               String                 @id @default(uuid())
+  supplierId       String                 @map("supplier_id")
+  nombre           String
+  tipoDocumento    SupplierDocumentType   @map("tipo_documento")
+  documento        String
+  fechaDocumento   DateTime               @map("fecha_documento")
+  valor            Decimal                @db.Decimal(12, 2)
+  fechaVencimiento DateTime               @map("fecha_vencimiento")
+  estado           SupplierDocumentStatus @default(PENDIENTE)
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  deletedAt        DateTime?              @map("deleted_at")
+  createdById      String?                @map("created_by_id")
+
+  supplier  Supplier @relation(fields: [supplierId], references: [id])
+  createdBy User?    @relation("SupplierDocumentCreator", fields: [createdById], references: [id])
+
+  @@index([supplierId])
+  @@map("supplier_documents")
 }
 
 model WorkOrder {
@@ -206,24 +348,24 @@ model WorkOrder {
   createdById String?         @map("created_by_id")
 
   // Client info (denormalized for the work order header)
-  rut              String?
-  razonSocial      String? @map("razon_social")
-  entregadoPor     String? @map("entregado_por")
-  celular          String?
+  rut          String?
+  razonSocial  String? @map("razon_social")
+  entregadoPor String? @map("entregado_por")
+  celular      String?
 
   // Operation details
-  fechaTrabajo     DateTime? @map("fecha_trabajo")
-  local            String?
-  encargado        String?
-  condicionesPago  String? @map("condiciones_pago")
+  fechaTrabajo    DateTime? @map("fecha_trabajo")
+  local           String?
+  encargado       String?
+  condicionesPago String?   @map("condiciones_pago")
 
   // Documents & deadlines
-  nroFactura       String? @map("nro_factura")
-  nroGuia          String? @map("nro_guia")
-  tipoOC           String? @map("tipo_oc") @default("ORDEN INTERNO")
-  nroOrdenCompra   String? @map("nro_orden_compra")
-  fechaEntrega     DateTime? @map("fecha_entrega")
-  plazoDias        Int? @map("plazo_dias")
+  nroFactura     String?   @map("nro_factura")
+  nroGuia        String?   @map("nro_guia")
+  tipoOC         String?   @default("ORDEN INTERNO") @map("tipo_oc")
+  nroOrdenCompra String?   @map("nro_orden_compra")
+  fechaEntrega   DateTime? @map("fecha_entrega")
+  plazoDias      Int?      @map("plazo_dias")
 
   // Totals
   neto                Decimal? @db.Decimal(12, 2)
@@ -232,12 +374,15 @@ model WorkOrder {
   iva                 Decimal? @db.Decimal(12, 2)
   total               Decimal? @db.Decimal(12, 2)
 
-  createdBy User?               @relation("WorkOrderCreator", fields: [createdById], references: [id])
-  client    Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  quotation Quotation?          @relation(fields: [quotationId], references: [id])
-  stages    WorkOrderStage[]
-  materials WorkOrderMaterial[]
-  invoices  Invoice[]
+  createdBy     User?                  @relation("WorkOrderCreator", fields: [createdById], references: [id])
+  client        Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  quotation     Quotation?             @relation(fields: [quotationId], references: [id])
+  stages        WorkOrderStage[]
+  materials     WorkOrderMaterial[]
+  invoices      Invoice[]
+  encargadoId   String?                @map("encargado_id")
+  encargadoRef  Encargado?             @relation(fields: [encargadoId], references: [id], onDelete: SetNull)
+  solicitudesOC SolicitudOrdenCompra[]
 
   @@map("work_orders")
 }
@@ -245,7 +390,7 @@ model WorkOrder {
 enum WorkOrderStatus {
   TODO
   IN_PROGRESS
-  QUALITY_CHECK
+  DRAFT
   COMPLETED
 }
 
@@ -280,16 +425,16 @@ enum StageStatus {
 }
 
 model WorkOrderMaterial {
-  id          String    @id @default(uuid())
-  workOrderId String    @map("work_order_id")
+  id          String   @id @default(uuid())
+  workOrderId String   @map("work_order_id")
   material    String
-  quantity    Decimal   @db.Decimal(10, 2)
+  quantity    Decimal  @db.Decimal(10, 2)
   unit        String
-  unitPrice   Decimal?  @map("unit_price") @db.Decimal(10, 2)
-  total       Decimal?  @db.Decimal(12, 2)
+  unitPrice   Decimal? @map("unit_price") @db.Decimal(10, 2)
+  total       Decimal? @db.Decimal(12, 2)
   notes       String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
@@ -309,9 +454,10 @@ model Purchase {
   deletedAt   DateTime?      @map("deleted_at")
   createdById String?        @map("created_by_id")
 
-  createdBy User?          @relation("PurchaseCreator", fields: [createdById], references: [id])
-  supplier  Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  createdBy User?                 @relation("PurchaseCreator", fields: [createdById], references: [id])
+  supplier  Supplier              @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   items     PurchaseItem[]
+  solicitud SolicitudOrdenCompra? @relation("SolicitudPurchase")
 
   @@map("purchases")
 }
@@ -359,6 +505,10 @@ model Invoice {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   deletedAt      DateTime?     @map("deleted_at")
   createdById    String?       @map("created_by_id")
+  tipoDocumento  String?       @default("Factura Electrónica") @map("tipo_documento")
+  abonos         Decimal?      @default(0) @db.Decimal(12, 2)
+  saldo          Decimal?      @db.Decimal(12, 2)
+  guiasAsociadas String?       @map("guias_asociadas")
 
   createdBy User?         @relation("InvoiceCreator", fields: [createdById], references: [id])
   client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -398,28 +548,28 @@ model InvoiceItem {
 }
 
 model Payment {
-  id                  String        @id @default(cuid())
-  number              String        @unique
-  invoiceId           String?       @map("invoice_id")
-  supplierId          String?       @map("supplier_id")
-  documentType        String?       @map("document_type") // FA, BO, PA, OT, CH
-  documentNumber      String?       @map("document_number")
-  documentDate        DateTime?     @map("document_date")
-  dueDate             DateTime?     @map("due_date")
-  amount              Decimal       @db.Decimal(12, 2)
-  method              PaymentMethod
-  status              String        @default("PENDIENTE") @map("status") // PENDIENTE, PAGADO, CANCELLED
-  cancellationReason  String?       @map("cancellation_reason")
-  reference           String?
-  date                DateTime
-  notes               String?
-  createdAt           DateTime      @default(now()) @map("created_at")
-  updatedAt           DateTime      @updatedAt @map("updated_at")
-  deletedAt           DateTime?     @map("deleted_at")
-  createdById         String?       @map("created_by_id")
+  id                 String        @id @default(cuid())
+  number             String        @unique
+  invoiceId          String?       @map("invoice_id")
+  supplierId         String?       @map("supplier_id")
+  documentType       String?       @map("document_type") // FA, BO, PA, OT, CH
+  documentNumber     String?       @map("document_number")
+  documentDate       DateTime?     @map("document_date")
+  dueDate            DateTime?     @map("due_date")
+  amount             Decimal       @db.Decimal(12, 2)
+  method             PaymentMethod
+  status             String        @default("PENDIENTE") @map("status") // PENDIENTE, PAGADO, CANCELLED
+  cancellationReason String?       @map("cancellation_reason")
+  reference          String?
+  date               DateTime
+  notes              String?
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
+  createdById        String?       @map("created_by_id")
 
-  createdBy User?   @relation("PaymentCreator", fields: [createdById], references: [id])
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  createdBy User?     @relation("PaymentCreator", fields: [createdById], references: [id])
+  invoice   Invoice?  @relation(fields: [invoiceId], references: [id])
   supplier  Supplier? @relation(fields: [supplierId], references: [id])
 
   @@map("payments")
