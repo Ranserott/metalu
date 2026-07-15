@@ -55,6 +55,17 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: "reports", actions: ["read"] },
     { resource: "settings", actions: ["read"] },
   ],
+  Supervisor: [
+    { resource: "dashboard", actions: ["read"] },
+    { resource: "clients", actions: ["create", "read", "update", "delete"] },
+    { resource: "quotations", actions: ["create", "read", "update", "delete"] },
+    { resource: "work-orders", actions: ["create", "read", "update", "delete"] },
+    { resource: "settings", actions: ["read"] },
+  ],
+  // Recursos NO listados en un rol = sin acceso (suppliers, purchases,
+  // billing, payments, reports, users quedan bloqueados para Supervisor).
+  // Las reglas finas (solo DRAFT, no cambia estado, fuerza DRAFT al crear)
+  // viven en src/lib/auth/recordPermissions.ts, no acá.
 };
 
 export function canAccess(role: string, resource: string, action: string): boolean {
@@ -70,6 +81,10 @@ export function canAccess(role: string, resource: string, action: string): boole
 
 export function isAdmin(roles: string[]): boolean {
   return roles.includes("Admin");
+}
+
+export function isSupervisor(roles: string[]): boolean {
+  return roles.includes("Supervisor");
 }
 
 export function hasAccess(roles: string[], resource: string): boolean {

@@ -23,6 +23,14 @@ async function main() {
     create: { name: "Admin" },
   });
 
+  // Create Supervisor role (assignable via /users; permissions live in
+  // src/lib/auth/permissions.ts — this row is just the role reference).
+  const supervisorRole = await prisma.role.upsert({
+    where: { name: "Supervisor" },
+    update: {},
+    create: { name: "Supervisor" },
+  });
+
   // Create default admin user. `email` is no longer a unique field on User
   // (we use `name` as the login identifier), so we do an explicit
   // find-or-create instead of upsert to keep the seed idempotent.
