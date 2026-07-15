@@ -14,6 +14,17 @@ async function assertParentClient(parentClientId: string | null | undefined, cur
   if (!parent) throw new Error("La empresa padre no existe");
 }
 
+// <input type="date"> posts a date-only string ("YYYY-MM-DD") but Prisma's
+// DateTime field rejects it as a premature ISO-8601. Normalize at the service
+// boundary so the rest of the app can keep accepting strings from the form.
+function normalizeDateInput(v: string | undefined): Date | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === "") return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(`${v}T00:00:00.000Z`);
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export async function getClients(opts?: { activeOnly?: boolean }) {
   return prisma.client.findMany({
     where: {
@@ -57,9 +68,11 @@ export async function getClientById(id: string) {
 
 export async function createClient(data: ClientInput, userId: string) {
   await assertParentClient(data.parentClientId);
+  const { lastPaymentDate, ...rest } = data;
   return prisma.client.create({
     data: {
-      ...data,
+      ...rest,
+      lastPaymentDate: normalizeDateInput(lastPaymentDate) ?? null,
       createdById: userId,
     },
   });
@@ -67,9 +80,15 @@ export async function createClient(data: ClientInput, userId: string) {
 
 export async function updateClient(id: string, data: Partial<ClientInput>) {
   await assertParentClient(data.parentClientId, id);
+  const { lastPaymentDate, ...rest } = data;
   return prisma.client.update({
     where: { id },
-    data,
+    data: {
+      ...rest,
+      ...(lastPaymentDate !== undefined
+        ? { lastPaymentDate: normalizeDateInput(lastPaymentDate) }
+        : {}),
+    },
   });
 }
 
