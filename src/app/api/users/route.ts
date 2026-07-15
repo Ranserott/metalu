@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { isAdmin } from "@/lib/auth/permissions";
 import { getUsers, createUser } from "@/modules/users/services/userService";
 import { CreateUserSchema } from "@/modules/users/validations/userSchemas";
 
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !isAdmin(session.user.roles ?? [])) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -21,7 +22,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !isAdmin(session.user.roles ?? [])) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 

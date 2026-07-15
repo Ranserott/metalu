@@ -89,8 +89,8 @@ export async function canDeleteUser(userId: string): Promise<{ can: boolean; rea
 
   if (!userToDelete) return { can: false, reason: "Usuario no encontrado" };
 
-  const isAdmin = userToDelete.roles.some((r: { role: { name: string } }) => r.role.name === "admin");
-  if (!isAdmin) return { can: true }; // Non-admins can always be deleted
+  const isAdminUser = userToDelete.roles.some((r: { role: { name: string } }) => r.role.name === "Admin");
+  if (!isAdminUser) return { can: true }; // Non-admins can always be deleted
 
   // Check if there are other active admins
   const otherAdmins = await prisma.user.count({
@@ -98,7 +98,7 @@ export async function canDeleteUser(userId: string): Promise<{ can: boolean; rea
       deletedAt: null,
       isActive: true,
       id: { not: userId },
-      roles: { some: { role: { name: "admin" } } },
+      roles: { some: { role: { name: "Admin" } } },
     },
   });
 

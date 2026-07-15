@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { isAdmin } from "@/lib/auth/permissions";
 import { getUserById, updateUser, deleteUser, canDeleteUser } from "@/modules/users/services/userService";
 import { UpdateUserSchema } from "@/modules/users/validations/userSchemas";
 
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !isAdmin(session.user.roles ?? [])) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -32,7 +33,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !isAdmin(session.user.roles ?? [])) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
@@ -60,7 +61,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || !session.user.roles.includes("admin")) {
+    if (!session?.user || !isAdmin(session.user.roles ?? [])) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
