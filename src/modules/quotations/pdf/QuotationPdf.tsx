@@ -98,20 +98,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#111",
   },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
   logo: {
     width: 70,
     height: 70,
+    marginBottom: 8,
   },
-  headerRight: {
+  headerCenter: {
     flexDirection: "column",
     alignItems: "center",
-    maxWidth: 360,
+    marginBottom: 10,
   },
   title: {
     fontSize: 20,
@@ -300,21 +295,19 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
       subject={`Cotizacion ${quotation.number}`}
     >
       <Page size="A4" style={styles.page}>
-        {/* HEADER */}
-        <View style={styles.headerRow}>
-          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
-          <View style={styles.headerRight}>
-            <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
-            <Text style={styles.companyName}>{COMPANY.name}</Text>
-            <Text style={styles.companyLine}>
-              {COMPANY.address}  *  {COMPANY.neighborhood}
-            </Text>
-            <Text style={styles.companyLine}>
-              FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
-            </Text>
-            <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
-            <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
-          </View>
+        {/* HEADER — logo top-left, company info centered below */}
+        {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
+          <Text style={styles.companyName}>{COMPANY.name}</Text>
+          <Text style={styles.companyLine}>
+            {COMPANY.address}  *  {COMPANY.neighborhood}
+          </Text>
+          <Text style={styles.companyLine}>
+            FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
+          </Text>
+          <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
+          <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
         </View>
 
         {/* CLIENT INFO BOX — 2-column grid with row dividers */}
