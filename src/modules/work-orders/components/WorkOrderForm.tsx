@@ -387,7 +387,8 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, forceDraft
   }
 
   async function handlePrint() {
-    const built = buildPayload();
+    const status: "DRAFT" | "IN_PROGRESS" = forceDraft ? "DRAFT" : "IN_PROGRESS";
+    const built = buildPayload(status);
     if (!built) return;
     const { payload, itemsPayload } = built;
 
@@ -907,16 +908,14 @@ export function WorkOrderForm({ initialNumber, initialData, editMode, forceDraft
           </Button>
         </div>
         <div className="flex gap-2">
-          {!forceDraft && (
-            <Button type="button" variant="outline" onClick={handlePrint} disabled={printing || submitting}>
-              {printing ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Printer className="w-4 h-4 mr-2" />
-              )}
-              {printing ? "Preparando..." : "Imprimir"}
-            </Button>
-          )}
+          <Button type="button" variant="outline" onClick={handlePrint} disabled={printing || submitting}>
+            {printing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Printer className="w-4 h-4 mr-2" />
+            )}
+            {printing ? "Preparando..." : "Imprimir"}
+          </Button>
           {!forceDraft && (
             <Button type="button" variant="outline" className="text-red-500 border-red-300 hover:bg-red-50">
               <Trash className="w-4 h-4 mr-2" />
