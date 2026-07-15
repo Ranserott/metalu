@@ -296,65 +296,68 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
       subject={`Cotizacion ${quotation.number}`}
     >
       <Page size="A4" style={styles.page}>
-        {/* HEADER — logo top-left, company info centered below */}
-        {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
-          <Text style={styles.companyName}>{COMPANY.name}</Text>
-          <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
-          <Text style={styles.companyLine}>
-            {COMPANY.address}  *  {COMPANY.neighborhood}
-          </Text>
-          <Text style={styles.companyLine}>
-            FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
-          </Text>
-          <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
-        </View>
+        {/* HEADER + CLIENT INFO + DESCRIPCIÓN — wrap={false} keeps this block
+            together on page 1. If a quotation has many items the tables will
+            flow to subsequent pages; this section is never repeated. */}
+        <View wrap={false}>
+          {logoSrc ? <Image src={logoSrc} style={styles.logo} /> : <View style={styles.logo} />}
+          <View style={styles.headerCenter}>
+            <Text style={styles.title}>COTIZACION N°{quotation.number}</Text>
+            <Text style={styles.companyName}>{COMPANY.name}</Text>
+            <Text style={styles.companyLine}>RUT {COMPANY.rut}</Text>
+            <Text style={styles.companyLine}>
+              {COMPANY.address}  *  {COMPANY.neighborhood}
+            </Text>
+            <Text style={styles.companyLine}>
+              FONO/FAX {COMPANY.phone}  *  {COMPANY.city}
+            </Text>
+            <Text style={styles.companyMail}>MAIL: {COMPANY.email}</Text>
+          </View>
 
-        {/* CLIENT INFO BOX — 2-column grid with row dividers */}
-        <View style={styles.box}>
-          {[
-            ["Cliente", clienteName, "Fecha", formatDate(quotation.createdAt)],
-            ["Rut", rut || "—", "Ciudad", ciudad || "—"],
-            [
-              "Direccion",
-              direccion,
-              "Plazo Entrega",
-              quotation.plazoEntrega || "—",
-            ],
-            [
-              "Atencion",
-              quotation.atencion || "—",
-              "Validez Oferta",
-              formatDate(quotation.validUntil),
-            ],
-          ].map(([lblL, valL, lblR, valR], idx, arr) => (
-            <View
-              key={idx}
-              style={
-                idx === arr.length - 1
-                  ? styles.boxFieldRowLast
-                  : styles.boxFieldRow
-              }
-            >
-              <View style={[styles.cell, styles.cellLabel]}>
-                <Text style={styles.cellLabelText}>{lblL}</Text>
+          {/* CLIENT INFO BOX — 2-column grid with row dividers */}
+          <View style={styles.box}>
+            {[
+              ["Cliente", clienteName, "Fecha", formatDate(quotation.createdAt)],
+              ["Rut", rut || "—", "Ciudad", ciudad || "—"],
+              [
+                "Direccion",
+                direccion,
+                "Plazo Entrega",
+                quotation.plazoEntrega || "—",
+              ],
+              [
+                "Atencion",
+                quotation.atencion || "—",
+                "Validez Oferta",
+                formatDate(quotation.validUntil),
+              ],
+            ].map(([lblL, valL, lblR, valR], idx, arr) => (
+              <View
+                key={idx}
+                style={
+                  idx === arr.length - 1
+                    ? styles.boxFieldRowLast
+                    : styles.boxFieldRow
+                }
+              >
+                <View style={[styles.cell, styles.cellLabel]}>
+                  <Text style={styles.cellLabelText}>{lblL}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellValue]}>
+                  <Text style={styles.cellValueText}>{valL}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellLabel]}>
+                  <Text style={styles.cellLabelText}>{lblR}</Text>
+                </View>
+                <View style={[styles.cell, styles.cellValue]}>
+                  <Text style={styles.cellValueText}>{valR}</Text>
+                </View>
               </View>
-              <View style={[styles.cell, styles.cellValue]}>
-                <Text style={styles.cellValueText}>{valL}</Text>
-              </View>
-              <View style={[styles.cell, styles.cellLabel]}>
-                <Text style={styles.cellLabelText}>{lblR}</Text>
-              </View>
-              <View style={[styles.cell, styles.cellValue]}>
-                <Text style={styles.cellValueText}>{valR}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
 
-        {/* DESCRIPCIÓN BOX — Área + Descripción */}
-        <View style={styles.descripcionBox}>
+          {/* DESCRIPCIÓN BOX — Área + Descripción */}
+          <View style={styles.descripcionBox}>
           <View style={styles.boxFieldRow}>
             <View style={[styles.cell, styles.cellLabel]}>
               <Text style={styles.cellLabelText}>Área:</Text>
@@ -375,6 +378,7 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
               </Text>
             </View>
           </View>
+        </View>
         </View>
 
         {/* I. DETALLE DE MATERIALES */}
@@ -455,50 +459,55 @@ export function QuotationPdf({ quotation, logoSrc }: Props) {
           </View>
         </View>
 
-        {/* FOOTER — creator (left) + totals (right) */}
-        <View style={styles.footerRow}>
-          <View style={styles.footerLeft}>
-            <Text style={styles.usuarioLine}>
-              Usuario: {quotation.createdBy?.name ?? "—"}
-            </Text>
-            {quotation.createdBy?.phone ? (
+        {/* FOOTER (totals) + SIGNATURE — wrap={false} keeps them together at
+            the end of the document. If the tables overflow the first page,
+            this block lands on whichever page has room for it. */}
+        <View wrap={false}>
+          {/* FOOTER — creator (left) + totals (right) */}
+          <View style={styles.footerRow}>
+            <View style={styles.footerLeft}>
               <Text style={styles.usuarioLine}>
-                Teléfono: {quotation.createdBy.phone}
+                Usuario: {quotation.createdBy?.name ?? "—"}
               </Text>
-            ) : null}
-          </View>
-          <View style={styles.footerRight}>
-            <View style={styles.resumenLine}>
-              <Text>Sub-Total Neto:</Text>
-              <Text>{formatCLP(subtotal)}</Text>
-            </View>
-            {discountAmount > 0 && (
-              <View style={styles.resumenLine}>
-                <Text>
-                  (-) Descuento{discountType === "PERCENT" ? ` ${discountPercent}%` : ""}:
+              {quotation.createdBy?.phone ? (
+                <Text style={styles.usuarioLine}>
+                  Teléfono: {quotation.createdBy.phone}
                 </Text>
-                <Text>{formatCLP(discountAmount)}</Text>
+              ) : null}
+            </View>
+            <View style={styles.footerRight}>
+              <View style={styles.resumenLine}>
+                <Text>Sub-Total Neto:</Text>
+                <Text>{formatCLP(subtotal)}</Text>
               </View>
-            )}
-            <View style={styles.resumenLine}>
-              <Text>Neto:</Text>
-              <Text>{formatCLP(neto)}</Text>
-            </View>
-            <View style={styles.resumenLine}>
-              <Text>Iva:</Text>
-              <Text>{formatCLP(tax)}</Text>
-            </View>
-            <View style={styles.resumenTotal}>
-              <Text>Total:</Text>
-              <Text>{formatCLP(total)}</Text>
+              {discountAmount > 0 && (
+                <View style={styles.resumenLine}>
+                  <Text>
+                    (-) Descuento{discountType === "PERCENT" ? ` ${discountPercent}%` : ""}:
+                  </Text>
+                  <Text>{formatCLP(discountAmount)}</Text>
+                </View>
+              )}
+              <View style={styles.resumenLine}>
+                <Text>Neto:</Text>
+                <Text>{formatCLP(neto)}</Text>
+              </View>
+              <View style={styles.resumenLine}>
+                <Text>Iva:</Text>
+                <Text>{formatCLP(tax)}</Text>
+              </View>
+              <View style={styles.resumenTotal}>
+                <Text>Total:</Text>
+                <Text>{formatCLP(total)}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* SIGNATURE */}
-        <View style={styles.firmaContainer}>
-          <View style={styles.firmaLine} />
-          <Text style={styles.firmaText}>Firma Cliente</Text>
+          {/* SIGNATURE */}
+          <View style={styles.firmaContainer}>
+            <View style={styles.firmaLine} />
+            <Text style={styles.firmaText}>Firma Cliente</Text>
+          </View>
         </View>
       </Page>
     </Document>
