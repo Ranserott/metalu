@@ -2,7 +2,9 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/tables/DataTable";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyReportState } from "../EmptyReportState";
+import { SelectionCheckboxHeader } from "../SelectionCheckboxHeader";
 import { formatCLP, formatDate } from "@/modules/reports/utils/formatters";
 import { SUPPLIER_DOCUMENT_TYPE_LABELS } from "@/modules/suppliers/types/supplierDocument";
 import type {
@@ -18,67 +20,93 @@ type Props = {
   rows: SupplierDocBySupplierRow[];
   totals?: SupplierDocBySupplierTotals;
   loading: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleAll: (ids: string[]) => void;
 };
 
-const columns: ColumnDef<DisplayRow>[] = [
-  {
-    id: "primary",
-    header: "Fecha Vencimiento / Tipo",
-    cell: ({ row }) => {
-      const r = row.original;
-      if (r.kind === "header") {
+function buildColumns(
+  selectedIds: Set<string>,
+  onToggleSelect: (id: string) => void
+): ColumnDef<DisplayRow>[] {
+  return [
+    {
+      id: "select",
+      header: () => null,
+      cell: ({ row }) => {
+        const r = row.original;
+        // Group-header rows are decorative aggregations, NOT real documents.
+        // Skip the checkbox so users can only select payable items.
+        if (r.kind === "header") return <div />;
         return (
-          <span className="font-bold text-[var(--theme-dark)]">
-            {r.supplierName}
-          </span>
+          <Checkbox
+            checked={selectedIds.has(r.row.id)}
+            onCheckedChange={() => onToggleSelect(r.row.id)}
+            aria-label="Seleccionar documento"
+          />
         );
-      }
-      return formatDate(r.row.fechaVencimiento);
+      },
+      enableSorting: false,
     },
-  },
-  {
-    id: "tipo",
-    header: "Tipo",
-    cell: ({ row }) => {
-      const r = row.original;
-      if (r.kind === "header") return null;
-      return SUPPLIER_DOCUMENT_TYPE_LABELS[r.row.tipoDocumento];
+    {
+      id: "primary",
+      header: "Fecha Vencimiento / Tipo",
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.kind === "header") {
+          return (
+            <span className="font-bold text-[var(--theme-dark)]">
+              {r.supplierName}
+            </span>
+          );
+        }
+        return formatDate(r.row.fechaVencimiento);
+      },
     },
-  },
-  {
-    id: "nombre",
-    header: "Nombre",
-    cell: ({ row }) => {
-      const r = row.original;
-      if (r.kind === "header") return null;
-      return r.row.nombre;
+    {
+      id: "tipo",
+      header: "Tipo",
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.kind === "header") return null;
+        return SUPPLIER_DOCUMENT_TYPE_LABELS[r.row.tipoDocumento];
+      },
     },
-  },
-  {
-    id: "documento",
-    header: "N° Documento",
-    cell: ({ row }) => {
-      const r = row.original;
-      if (r.kind === "header") return null;
-      return r.row.documento;
+    {
+      id: "nombre",
+      header: "Nombre",
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.kind === "header") return null;
+        return r.row.nombre;
+      },
     },
-  },
-  {
-    id: "valor",
-    header: "Valor",
-    cell: ({ row }) => {
-      const r = row.original;
-      if (r.kind === "header") {
-        return (
-          <span className="font-semibold text-blue-700">
-            {formatCLP(r.subtotal)} ({r.count} docs)
-          </span>
-        );
-      }
-      return <span className="text-right block">{formatCLP(r.row.valor)}</span>;
+    {
+      id: "documento",
+      header: "N° Documento",
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.kind === "header") return null;
+        return r.row.documento;
+      },
     },
-  },
-];
+    {
+      id: "valor",
+      header: "Valor",
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.kind === "header") {
+          return (
+            <span className="font-semibold text-blue-700">
+              {formatCLP(r.subtotal)} ({r.count} docs)
+            </span>
+          );
+        }
+        return <span className="text-right block">{formatCLP(r.row.valor)}</span>;
+      },
+    },
+  ];
+}
 
 function buildDisplayRows(rows: SupplierDocBySupplierRow[]): DisplayRow[] {
   // 1) Compute group aggregates
@@ -115,16 +143,44 @@ function buildDisplayRows(rows: SupplierDocBySupplierRow[]): DisplayRow[] {
   return out;
 }
 
-export function BySupplierTab({ rows, totals, loading }: Props) {
+export function BySupplierTab({
+  rows,
+  totals,
+  loading,
+  selectedIds,
+  onToggleSelect,
+  onToggleAll,
+}: Props) {
   if (!loading && rows.length === 0) {
-    return <EmptyReportState message="No hay documentos pendientes por proveedor" />;
+    return (
+      <EmptyReportState message="No hay documentos pendientes por proveedor" />
+    );
   }
 
   const display = buildDisplayRows(rows);
+  const columns = buildColumns(selectedIds, onToggleSelect);
+  // Override the select-column header with a real "select all" that sees
+  // only the data-row ids (excluding header rows).
+  const headerColumns: ColumnDef<DisplayRow>[] = columns.map((c) =>
+    c.id === "select"
+      ? ({
+          ...c,
+          header: () => (
+            <SelectionCheckboxHeader
+              visibleIds={display
+                .filter((r): r is { kind: "doc"; row: SupplierDocBySupplierRow } => r.kind === "doc")
+                .map((r) => r.row.id)}
+              selectedIds={selectedIds}
+              onToggleAll={onToggleAll}
+            />
+          ),
+        } as ColumnDef<DisplayRow>)
+      : c
+  );
 
   return (
     <div className="space-y-3">
-      <DataTable columns={columns} data={display} />
+      <DataTable columns={headerColumns} data={display} />
       {totals && rows.length > 0 && (
         <div className="flex justify-end gap-6 rounded-md border bg-gray-50 px-4 py-2 text-sm">
           <div>
