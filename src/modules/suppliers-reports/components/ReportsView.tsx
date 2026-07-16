@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { CheckCircle2, Download, Loader2 } from "lucide-react";
 import { supplierReportFilename } from "../utils/filename";
 import { SupplierReportFilters } from "./SupplierReportFilters";
 import { ByDueDateTab } from "./tabs/ByDueDateTab";
@@ -41,6 +42,61 @@ export function ReportsView({ suppliers }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [totals, setTotals] = useState<any>(undefined);
+
+  // Selection state — owns the ids of documents the admin has ticked.
+  // Cleared on tab change so a bulk action can never straddle tabs by accident.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMarking, setBulkMarking] = useState(false);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback((ids: string[]) => {
+    setSelectedIds((prev) => {
+      const allSelected = ids.length > 0 && ids.every((id) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set([...prev, ...ids]);
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  async function handleBulkMarkPaid() {
+    const ids = [...selectedIds];
+    if (ids.length === 0 || bulkMarking) return;
+    setBulkMarking(true);
+    try {
+      const res = await fetch("/api/suppliers/documents/paid", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error ?? `Error ${res.status}`);
+        return;
+      }
+      toast.success(
+        data.updated === ids.length
+          ? `${data.updated} documento(s) marcados como pagados`
+          : `${data.updated} marcados (${ids.length - data.updated} ya estaban pagados)`
+      );
+      clearSelection();
+      // Refetch the active tab so the just-paid rows vanish from the report
+      // (supplierReportService filters by estado: "PENDIENTE").
+      await fetchData();
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo marcar");
+    } finally {
+      setBulkMarking(false);
+    }
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -81,6 +137,8 @@ export function ReportsView({ suppliers }: Props) {
     // (e.g. daily-summary totals would otherwise keep by-due-date's {total} and crash on .pendiente.total).
     setRows([]);
     setTotals(undefined);
+    // Clear selection to avoid stranding ids from a previous tab.
+    clearSelection();
   }
 
   async function handleExportPdf() {
@@ -143,7 +201,22 @@ export function ReportsView({ suppliers }: Props) {
           />
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          {activeTab !== "daily-summary" && (
+            <Button
+              type="button"
+              onClick={handleBulkMarkPaid}
+              disabled={selectedIds.size === 0 || bulkMarking}
+              className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white"
+            >
+              {bulkMarking ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+              )}
+              Marcar {selectedIds.size} como pagados
+            </Button>
+          )}
           <Button
             type="button"
             onClick={handleExportPdf}
@@ -171,6 +244,9 @@ export function ReportsView({ suppliers }: Props) {
             rows={rows as SupplierDocByDueDateRow[]}
             totals={totals as SupplierDocByDueDateTotals | undefined}
             loading={loading}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleAll={toggleSelectAll}
           />
         </TabsContent>
         <TabsContent value="by-supplier" className="mt-4">
@@ -178,6 +254,9 @@ export function ReportsView({ suppliers }: Props) {
             rows={rows as SupplierDocBySupplierRow[]}
             totals={totals as SupplierDocBySupplierTotals | undefined}
             loading={loading}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleAll={toggleSelectAll}
           />
         </TabsContent>
         <TabsContent value="daily-summary" className="mt-4">
