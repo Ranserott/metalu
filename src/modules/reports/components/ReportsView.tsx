@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { reportFilename } from "../utils/filename";
 import { ReportFilters, type ClientOption } from "./ReportFilters";
 import { CartolaTab } from "./tabs/CartolaTab";
 import { PendingInvoicesTab } from "./tabs/PendingInvoicesTab";
@@ -33,6 +36,7 @@ export function ReportsView({ clients }: Props) {
   const [to, setTo] = useState<string | undefined>(undefined);
 
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [totals, setTotals] = useState<any>(undefined);
@@ -40,6 +44,8 @@ export function ReportsView({ clients }: Props) {
   const showDateRange = TEMPORAL_TABS.includes(activeTab);
   const clientRequired = activeTab === "cartola";
   const canFetch = !clientRequired || !!clientId;
+  const canExport =
+    !loading && !error && rows.length > 0 && (activeTab !== "cartola" || !!clientId);
 
   const fetchData = useCallback(async () => {
     if (!canFetch) {
@@ -85,6 +91,36 @@ export function ReportsView({ clients }: Props) {
     setClientId(value);
   }
 
+  async function handleExportPdf() {
+    if (!canExport || exporting) return;
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ type: activeTab });
+      if (clientId) params.set("clientId", clientId);
+      if (from) params.set("from", new Date(from).toISOString());
+      if (to) params.set("to", new Date(to).toISOString());
+
+      const res = await fetch(`/api/reports/pdf?${params.toString()}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Error ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = reportFilename(activeTab);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert(e.message ?? "Error al generar el PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -115,6 +151,31 @@ export function ReportsView({ clients }: Props) {
             onFromChange={setFrom}
             onToChange={setTo}
           />
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <Button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={!canExport || exporting}
+            title={
+              canExport
+                ? "Descargar PDF"
+                : rows.length === 0
+                  ? "No hay datos para exportar"
+                  : activeTab === "cartola" && !clientId
+                    ? "Seleccioná un cliente para exportar"
+                    : "Cargando..."
+            }
+            className="bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-dark)] hover:from-[var(--theme-dark)] hover:to-[var(--theme-darker)] text-white"
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Exportar PDF
+          </Button>
         </div>
 
         {error && (
