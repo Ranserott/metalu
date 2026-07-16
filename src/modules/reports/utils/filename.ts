@@ -12,6 +12,10 @@ const TAB_SLUGS: Record<ReportType, string> = {
 
 export function reportFilename(type: ReportType): string {
   const slug = TAB_SLUGS[type];
-  const date = new Date().toISOString().slice(0, 10);
+  // Filename date is user-visible; use Santiago local time so a click at 22:00 CLT
+  // doesn't produce tomorrow's UTC date. `en-CA` gives ISO-shaped YYYY-MM-DD.
+  const date = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Santiago",
+  });
   return `reporte-${slug}-${date}.pdf`;
 }
