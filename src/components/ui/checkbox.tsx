@@ -13,7 +13,7 @@ type CheckboxProps = {
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   function Checkbox(
-    { checked, onCheckedChange, disabled, className, ...rest },
+    { checked, onCheckedChange, disabled, className, "aria-label": ariaLabel },
     ref
   ) {
     return (
@@ -22,11 +22,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         type="checkbox"
         checked={checked}
         disabled={disabled}
-        aria-label={rest["aria-label"]}
+        aria-label={ariaLabel}
         onChange={(e) => onCheckedChange(e.target.checked)}
         className={cn(
           "h-4 w-4 rounded border-gray-300 text-[var(--theme-primary)]",
-          "focus:ring-2 focus:ring-[var(--theme-primary)] focus:ring-offset-1",
+          "focus:ring-2 focus:ring-[var(--theme-primary)]",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "cursor-pointer",
           className
