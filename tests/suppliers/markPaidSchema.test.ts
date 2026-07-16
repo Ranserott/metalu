@@ -14,10 +14,8 @@ describe("markPaidSchema", () => {
   });
 
   it("rejects more than 500 ids", () => {
-    const ids = Array.from({ length: 501 }, (_, i) =>
-      `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a${String(i).padStart(2, "0")}`
-    );
-    expect(() => markPaidSchema.parse({ ids })).toThrow(/500|m[áa]x/i);
+    const ids = Array.from({ length: 501 }, () => crypto.randomUUID());
+    expect(() => markPaidSchema.parse({ ids })).toThrow(/m[áa]ximo 500/i);
   });
 
   it("rejects non-uuid strings", () => {
