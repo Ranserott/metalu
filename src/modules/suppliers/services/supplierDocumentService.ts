@@ -37,3 +37,16 @@ export async function deleteDocument(docId: string) {
     data: { deletedAt: new Date() },
   });
 }
+
+export async function markDocumentsAsPaid(
+  ids: string[]
+): Promise<{ updated: number }> {
+  if (ids.length === 0) return { updated: 0 };
+  // Idempotent: the `estado: "PENDIENTE"` filter excludes rows that are already
+  // PAGADO, so re-calling with the same ids returns { updated: 0 } (not an error).
+  const result = await prisma.supplierDocument.updateMany({
+    where: { id: { in: ids }, estado: "PENDIENTE" },
+    data: { estado: "PAGADO" },
+  });
+  return { updated: result.count };
+}
