@@ -27,7 +27,8 @@ type Props = {
 
 function buildColumns(
   selectedIds: Set<string>,
-  onToggleSelect: (id: string) => void
+  onToggleSelect: (id: string) => void,
+  onToggleAll: (ids: string[]) => void,
 ): ColumnDef<SupplierDocByDueDateRow>[] {
   return [
     {
@@ -88,11 +89,10 @@ export function ByDueDateTab({
     );
   }
 
-  // Wire the visible rows back into the header so "select all" sees them.
-  const columns = buildColumns(selectedIds, onToggleSelect);
-  const headerColumns = columns.map((c, i) =>
+  const columns = buildColumns(selectedIds, onToggleSelect, onToggleAll);
+  const headerColumns: ColumnDef<SupplierDocByDueDateRow>[] = columns.map((c, i) =>
     i === 0
-      ? {
+      ? ({
           ...c,
           header: () => (
             <SelectionCheckboxHeader
@@ -101,7 +101,7 @@ export function ByDueDateTab({
               onToggleAll={onToggleAll}
             />
           ),
-        }
+        } as ColumnDef<SupplierDocByDueDateRow>)
       : c
   );
 
