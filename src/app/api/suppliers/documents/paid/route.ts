@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma/prisma";
 import { isAdmin } from "@/lib/auth/permissions";
 import { markPaidSchema } from "@/modules/suppliers/validations/markPaidSchema";
 import { markDocumentsAsPaid } from "@/modules/suppliers/services/supplierDocumentService";
@@ -18,7 +17,7 @@ export async function PATCH(req: NextRequest) {
   // write-class. Supervisor is already blocked at the middleware level for
   // /suppliers, but the route also explicitly checks role to defend against
   // direct API calls from any user with a session.
-  if (!isAdmin(session.user.roles ?? [])) {
+  if (!isAdmin(session.user.roles)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -39,11 +38,6 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    // Touch the prisma client so it can compile in deployments where the
-    // import would be tree-shaken otherwise; alternatively drop this line
-    // once the service import is enough to keep prisma live for the
-    // updateMany call.
-    void prisma;
     const { updated } = await markDocumentsAsPaid(parsed.data.ids);
     return NextResponse.json({ updated }, { status: 200 });
   } catch (error) {
