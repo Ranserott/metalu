@@ -125,6 +125,16 @@ jobs:
     # `npm test` runs in the `test` job on Linux (services on macOS/
     # Windows is impossible). For tag releases we want all of them;
     # for manual dispatch, every job runs anyway.
+    env:
+      # `src/lib/prisma/prisma.ts` throws at module load if
+      # `METALU_RUNTIME != "tauri"` and `DATABASE_URL` is unset.
+      # `next build` loads that module transitively (via API
+      # route handlers + services), so we must provide a value.
+      # The placeholder host is never reached — Prisma connects
+      # lazily on the first query, and the CI build never runs
+      # one. If you switch to `output: "export"` (full static
+      # export) this requirement disappears.
+      DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -160,11 +170,24 @@ jobs:
         # checkout.
         run: npx prisma generate --schema=prisma/schema.prisma
 
+      - name: Build Next.js standalone
+        # Next.js `output: "standalone"` produces `.next/standalone/`
+        # which contains the Node.js server entry (`server.js`) and its
+        # bundled deps. Tauri's runtime spawns this server (see
+        # `src-tauri/src/server.rs::spawn_next_server`), and we bundle
+        # the directory into the installer via
+        # `tauri.server.conf.json::bundle.resources`. Skip this step
+        # and `server.js` won't exist in the install dir — the app
+        # launches but the webview can't reach the API.
+        run: npm run build
+
       - name: Tauri build
         run: |
           cd src-tauri
           METALU_BUILD_TARGET=${{ matrix.build_target }} \
-            npm run tauri -- build --target ${{ matrix.target }}
+            npm run tauri -- build \
+              --config tauri.${{ matrix.build_target }}.conf.json \
+              --target ${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

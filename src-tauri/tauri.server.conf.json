@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "cl.metalu.server",
   "build": {
-    "frontendDist": "../out",
+    "frontendDist": "http://localhost:3000",
     "beforeBuildCommand": ""
   },
   "app": {
@@ -23,6 +23,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/icon.png"]
+    "icon": ["icons/icon.png"],
+    "resources": ["../.next/standalone/**"]
   }
 }
