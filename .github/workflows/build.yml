@@ -32,7 +32,61 @@ on:
           - all
 
 jobs:
+  # Tests run on Linux only because GitHub Actions `services:` is
+  # Linux-only. Four suites (runReport, getByDueDate, getBySupplier,
+  # markDocumentsAsPaid) need a real Postgres; the remaining suites
+  # use pglite. The build jobs below depend on this passing so a
+  # broken test never ships in an installer. Re-run the build job
+  # individually via workflow_dispatch to bypass when needed.
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: metalu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d metalu_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/metalu_test
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+      - name: Generate Prisma client
+        # `prisma generate` writes to src/generated/prisma/, which is
+        # what `@/generated/prisma` resolves to in tsconfig paths.
+        # Without this step, tests fail with ERR_MODULE_NOT_FOUND on a
+        # fresh CI checkout.
+        run: npx prisma generate --schema=prisma/schema.prisma
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U postgres -d metalu_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Postgres did not become ready in time" >&2
+          exit 1
+      - name: Apply Prisma migrations
+        run: npx prisma migrate deploy --schema=prisma/schema.prisma
+      - run: npm test
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -68,38 +122,9 @@ jobs:
             build_target: client
             artifact_prefix: windows-x64-client
     runs-on: ${{ matrix.os }}
-    # Filter removed: GitHub's expression parser fails on this compound
-    # `if:` with `inputs.X == matrix.X` checks ("Unrecognized named-value:
-    # 'matrix'"), causing every run to fail in 0 seconds with 0 jobs.
-    # The matrix has 6 entries (server+client × {macos-arm64, macos-x64,
-    # windows-x64}). For tag releases we want all of them; for manual
-    # dispatch, every job runs anyway. If we ever need a single-OS build,
-    # gate with a wrapper job that emits a filtered matrix via fromJSON.
-    # Postgres service for the four test suites that need a real DB
-    # (`tests/reports/runReport.test.ts`, `tests/supplier-reports/
-    # getByDueDate.test.ts`, `tests/supplier-reports/getBySupplier.
-    # test.ts`, `tests/suppliers/markDocumentsAsPaid.test.ts`). These
-    # import `src/lib/prisma/prisma.ts` which throws at load time when
-    # `DATABASE_URL` is unset. On Tauri Windows runners the Postgres
-    # container only listens on the host loopback, but `localhost` is
-    # mapped by the service, so the same DSN works on all OSes.
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: metalu_test
-        ports:
-          - 5432:5432
-        # Health check so jobs don't have to race the cold start.
-        options: >-
-          --health-cmd "pg_isready -U postgres -d metalu_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/metalu_test
+    # `npm test` runs in the `test` job on Linux (services on macOS/
+    # Windows is impossible). For tag releases we want all of them;
+    # for manual dispatch, every job runs anyway.
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -117,38 +142,24 @@ jobs:
           path: |
             ~/.cargo/registry
             src-tauri/target
-          # Cache key includes both Cargo.toml AND Cargo.lock so a dependency
-          # bump invalidates the cache. JS sources are intentionally excluded
-          # because they are not in the cargo target dir -- the
-          # `actions/setup-node` `cache: 'npm'` step handles `~/.npm` for npm.
+          # Cache key includes both Cargo.toml AND Cargo.lock so a
+          # dependency bump invalidates the cache. JS sources are
+          # intentionally excluded because they are not in the cargo
+          # target dir -- the `actions/setup-node` `cache: 'npm'` step
+          # handles `~/.npm` for npm.
           key: cargo-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml', 'src-tauri/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ matrix.target }}-
 
       - run: npm ci
       - name: Generate Prisma client
-        # `prisma generate` writes to src/generated/prisma/, which is what
-        # `@/generated/prisma` resolves to in tsconfig paths. Without this
-        # step, `npm test` and `next build` both fail with ERR_MODULE_NOT_FOUND
-        # because the generated files don't exist on a fresh CI checkout.
+        # `prisma generate` writes to src/generated/prisma/, which is
+        # what `@/generated/prisma` resolves to in tsconfig paths.
+        # Without this step, `next build` fails with ERR_MODULE_NOT_FOUND
+        # because the generated files don't exist on a fresh CI
+        # checkout.
         run: npx prisma generate --schema=prisma/schema.prisma
-      - name: Wait for Postgres
-        # Service container can take a beat to come up; loop until
-        # pg_isready succeeds before applying migrations.
-        run: |
-          for i in $(seq 1 30); do
-            if pg_isready -h localhost -p 5432 -U postgres -d metalu_test; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Postgres did not become ready in time" >&2
-          exit 1
-      - name: Apply Prisma migrations
-        # The Postgres service starts with an empty database. Apply all
-        # pending migrations so the schema-test suites have tables.
-        run: npx prisma migrate deploy --schema=prisma/schema.prisma
-      - run: npm test
+
       - name: Tauri build
         run: |
           cd src-tauri
