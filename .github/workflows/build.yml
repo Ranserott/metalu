@@ -183,10 +183,9 @@ jobs:
 
       - name: Tauri build
         run: |
-          cd src-tauri
           METALU_BUILD_TARGET=${{ matrix.build_target }} \
             npm run tauri -- build \
-              --config tauri.${{ matrix.build_target }}.conf.json \
+              --config src-tauri/tauri.${{ matrix.build_target }}.conf.json \
               --target ${{ matrix.target }}
 
       - name: Upload artifact
