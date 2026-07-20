@@ -70,12 +70,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     # Manual dispatch can scope the matrix by os_key and build_target.
     # When `inputs.os == 'all'` we skip this filter; likewise for build_target.
-    # This is the simpler of the two approaches (a job-level `if:` skip) —
-    # the alternative was to rebuild the matrix at runtime, which is harder
-    # to read and requires ugly expression gymnastics.
-    if: |
-      (github.event_name != 'workflow_dispatch' || inputs.os == 'all' || inputs.os == matrix.os_key) &&
-      (github.event_name != 'workflow_dispatch' || inputs.build_target == 'all' || inputs.build_target == matrix.build_target)
+    # Wrapped in `${{ }}` per GitHub Actions docs convention — without the
+    # wrapper, job-level `if:` can fail to recognize the `matrix` context
+    # ("Unrecognized named-value: 'matrix'"), which is why every run since
+    # 2026-07-15 failed in 0 seconds with 0 jobs.
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.os == 'all' || inputs.os == matrix.os_key) && (github.event_name != 'workflow_dispatch' || inputs.build_target == 'all' || inputs.build_target == matrix.build_target) }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
