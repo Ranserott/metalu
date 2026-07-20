@@ -198,7 +198,15 @@ jobs:
         # so `../.next/standalone/**` never matches anything. Stage a
         # copy of the standalone bundle into src-tauri/ so the resources
         # pattern can stay relative without `..`.
-        run: rm -rf src-tauri/.standalone-bundle && cp -r .next/standalone src-tauri/.standalone-bundle
+        run: |
+          echo "=== before staging ==="
+          ls -la .next/ 2>&1 | head -20
+          echo "=== copy ==="
+          rm -rf src-tauri/.standalone-bundle
+          cp -r .next/standalone src-tauri/.standalone-bundle
+          echo "exit=$?"
+          echo "=== after staging ==="
+          ls -la src-tauri/.standalone-bundle/ 2>&1 | head -20
 
       - name: Tauri build
         # Single-line command with `shell: bash` so it works identically
