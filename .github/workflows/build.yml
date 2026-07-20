@@ -161,6 +161,15 @@ jobs:
           restore-keys: |
             cargo-${{ runner.os }}-${{ matrix.target }}-
 
+      - name: Add Rust target
+        # macos-latest is now Apple Silicon by default and only ships
+        # the aarch64-apple-darwin standard library. The matrix also
+        # asks it to build x86_64-apple-darwin cross-compiled
+        # binaries, so we have to install that target. `rustup target
+        # add` is a no-op for the host target, so this step is safe
+        # across the whole matrix.
+        run: rustup target add ${{ matrix.target }}
+
       - run: npm ci
       - name: Generate Prisma client
         # `prisma generate` writes to src/generated/prisma/, which is
@@ -182,11 +191,15 @@ jobs:
         run: npm run build
 
       - name: Tauri build
-        run: |
-          METALU_BUILD_TARGET=${{ matrix.build_target }} \
-            npm run tauri -- build \
-              --config src-tauri/tauri.${{ matrix.build_target }}.conf.json \
-              --target ${{ matrix.target }}
+        # Single-line command with `shell: bash` so it works identically
+        # on macOS, Linux, and Windows runners. Windows defaults to
+        # PowerShell which doesn't accept the multi-line bash
+        # backslash continuation we used before
+        # (`ParserError: Missing expression after unary operator '--'`).
+        # bash is available on all runner images (Git for Windows on
+        # `windows-latest` ships bash.exe on PATH).
+        shell: bash
+        run: METALU_BUILD_TARGET=${{ matrix.build_target }} npm run tauri -- build --config src-tauri/tauri.${{ matrix.build_target }}.conf.json --target ${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

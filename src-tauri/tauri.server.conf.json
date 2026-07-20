@@ -24,6 +24,6 @@
     "active": true,
     "targets": "all",
     "icon": ["icons/icon.png"],
-    "resources": ["../.next/standalone/**"]
+    "resources": [".next/standalone/**"]
   }
 }
