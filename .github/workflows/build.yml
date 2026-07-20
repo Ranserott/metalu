@@ -190,18 +190,15 @@ jobs:
         # launches but the webview can't reach the API.
         run: npm run build
 
-      - name: Inspect Next.js output
-        # DEBUG: temporarily added to verify `.next/standalone/` is
-        # produced. Tauri build.rs reads this glob with cwd = src-tauri/,
-        # so we need to know what files actually exist before we can
-        # fix the resources pattern.
-        run: |
-          echo "=== pwd ==="
-          pwd
-          echo "=== ls -la .next/ ==="
-          ls -la .next/ 2>&1 || echo "(.next missing)"
-          echo "=== ls -la .next/standalone/ (if exists) ==="
-          ls -la .next/standalone/ 2>&1 || echo "(.next/standalone missing)"
+      - name: Stage standalone for tauri resources
+        # Tauri-build's `copy_resources` runs from build.rs's cwd =
+        # CARGO_MANIFEST_DIR = `src-tauri/`, and Tauri's `glob::glob`
+        # (via the `globset` crate) treats `..` as a literal pattern
+        # component — the walker resolves it but the matcher doesn't,
+        # so `../.next/standalone/**` never matches anything. Stage a
+        # copy of the standalone bundle into src-tauri/ so the resources
+        # pattern can stay relative without `..`.
+        run: rm -rf src-tauri/.standalone-bundle && cp -r .next/standalone src-tauri/.standalone-bundle
 
       - name: Tauri build
         # Single-line command with `shell: bash` so it works identically
