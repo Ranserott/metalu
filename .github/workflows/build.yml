@@ -101,6 +101,12 @@ jobs:
             cargo-${{ runner.os }}-${{ matrix.target }}-
 
       - run: npm ci
+      - name: Generate Prisma client
+        # `prisma generate` writes to src/generated/prisma/, which is what
+        # `@/generated/prisma` resolves to in tsconfig paths. Without this
+        # step, `npm test` and `next build` both fail with ERR_MODULE_NOT_FOUND
+        # because the generated files don't exist on a fresh CI checkout.
+        run: npx prisma generate --schema=prisma/schema.prisma
       - run: npm test
       - name: Tauri build
         run: |
