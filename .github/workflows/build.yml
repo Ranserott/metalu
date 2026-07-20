@@ -190,6 +190,19 @@ jobs:
         # launches but the webview can't reach the API.
         run: npm run build
 
+      - name: Inspect Next.js output
+        # DEBUG: temporarily added to verify `.next/standalone/` is
+        # produced. Tauri build.rs reads this glob with cwd = src-tauri/,
+        # so we need to know what files actually exist before we can
+        # fix the resources pattern.
+        run: |
+          echo "=== pwd ==="
+          pwd
+          echo "=== ls -la .next/ ==="
+          ls -la .next/ 2>&1 || echo "(.next missing)"
+          echo "=== ls -la .next/standalone/ (if exists) ==="
+          ls -la .next/standalone/ 2>&1 || echo "(.next/standalone missing)"
+
       - name: Tauri build
         # Single-line command with `shell: bash` so it works identically
         # on macOS, Linux, and Windows runners. Windows defaults to
