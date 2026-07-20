@@ -46,7 +46,23 @@ export async function applyMigrations(): Promise<void> {
       path.join(migrationsDir, dir, "migration.sql"),
       "utf8"
     );
-    await pg.exec(sql);
+    // PGlite wraps every `pg.exec(...)` call in a single implicit
+    // transaction. Some migrations (notably
+    // `20260714210000_rename_quality_check_to_draft`) need to ALTER
+    // TYPE ... ADD VALUE and then USE that new value in the next
+    // statement, which Postgres rejects with `unsafe use of new value
+    // ...` because both happen in the same transaction. Run each
+    // statement as its own auto-commit so the new enum value is
+    // visible before the next statement references it. Naive
+    // `;`-split is fine here because no migration uses BEGIN/COMMIT
+    // transaction control.
+    const statements = sql
+      .split(/;\s*(?:\r?\n|$)/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    for (const stmt of statements) {
+      await pg.exec(stmt);
+    }
     await pg.query(`INSERT INTO _metalu_migrations (id) VALUES ($1)`, [dir]);
   }
 }

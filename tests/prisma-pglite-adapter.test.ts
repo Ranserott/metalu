@@ -32,14 +32,13 @@ describe("pglite prisma adapter", () => {
     const prisma = createTauriPrismaClient();
     const user = await prisma.user.create({
       data: {
-        email: `test-${Date.now()}@example.com`,
         password: "x",
         name: "Test User",
       },
     });
     expect(user.id).toBeTruthy();
     const found = await prisma.user.findUnique({ where: { id: user.id } });
-    expect(found?.email).toBe(user.email);
+    expect(found?.name).toBe(user.name);
     await prisma.user.delete({ where: { id: user.id } });
     await prisma.$disconnect();
   });
