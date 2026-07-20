@@ -191,22 +191,24 @@ jobs:
         run: npm run build
 
       - name: Stage standalone for tauri resources
-        # Tauri-build's `copy_resources` runs from build.rs's cwd =
-        # CARGO_MANIFEST_DIR = `src-tauri/`, and Tauri's `glob::glob`
-        # (via the `globset` crate) treats `..` as a literal pattern
-        # component — the walker resolves it but the matcher doesn't,
-        # so `../.next/standalone/**` never matches anything. Stage a
-        # copy of the standalone bundle into src-tauri/ so the resources
-        # pattern can stay relative without `..`.
+        # Two reasons we copy `.next/standalone` into
+        # `src-tauri/.standalone-bundle` rather than referencing it
+        # directly:
+        # 1. `bundle.resources` patterns are passed verbatim to
+        #    `glob::glob()` in `tauri-utils`, which runs from
+        #    CARGO_MANIFEST_DIR = `src-tauri/`. `..` is never resolved
+        #    during pattern matching, so `../.next/standalone/**` is
+        #    treated as a literal path under `src-tauri/`.
+        # 2. The Rust `glob` crate's `**` matches *directories only* —
+        #    to match files inside arbitrary subdirectories you must
+        #    use `**/*` (see glob-0.3 docs and `tauri-utils` tests at
+        #    `resources.rs::resource_paths_iter_slice_allow_walk`).
+        #    Our pattern is `.standalone-bundle/**/*`, so the staging
+        #    destination must contain the files (not just the dirs).
+        shell: bash
         run: |
-          echo "=== before staging ==="
-          ls -la .next/ 2>&1 | head -20
-          echo "=== copy ==="
           rm -rf src-tauri/.standalone-bundle
           cp -r .next/standalone src-tauri/.standalone-bundle
-          echo "exit=$?"
-          echo "=== after staging ==="
-          ls -la src-tauri/.standalone-bundle/ 2>&1 | head -20
 
       - name: Tauri build
         # Single-line command with `shell: bash` so it works identically
