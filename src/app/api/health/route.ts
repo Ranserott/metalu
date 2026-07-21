@@ -14,11 +14,20 @@ export async function GET() {
 
     // Cheap query that confirms DB is reachable + schema migrated.
     await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ ok: true, ts: Date.now() });
-  } catch (err) {
+    return NextResponse.json({ ok: true, code: "ready", ts: Date.now() });
+  } catch (err: unknown) {
+    let code = "db_unavailable";
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      typeof err.code === "string"
+    ) {
+      code = err.code;
+    }
     console.error("[/api/health] db check failed:", err);
     return NextResponse.json(
-      { ok: false, error: "db_unavailable" },
+      { ok: false, code, ts: Date.now() },
       { status: 503 }
     );
   }
