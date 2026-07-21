@@ -7,6 +7,7 @@
     "dev:server": "tsx scripts/dev-server.ts",
     "build": "next build --webpack",
     "build:server": "bash scripts/build-server-bundle.sh",
+    "pdf:install-guide": "tsx scripts/generate-install-guide.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
