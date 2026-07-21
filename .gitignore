@@ -48,3 +48,5 @@ src-tauri/Cargo.lock
 src-tauri/gen/
 src-tauri/.standalone-bundle/
 .env*.local
+src-tauri-client/target/
+src-tauri-client/gen/
