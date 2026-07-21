@@ -95,6 +95,16 @@ pub fn build_server_url(server: &DiscoveredServer) -> String {
     format!("http://{}:{}", server.ip, server.port)
 }
 
+/// Lightweight URL sanity check: starts with http(s)://, no whitespace, body
+/// after the scheme is non-empty. Used by the cache short-circuit in
+/// `client_app::try_resolve_server_url` and by the `set_client_config` Tauri
+/// command to reject malformed URLs before they hit the webview.
+pub fn validate_server_url(s: &str) -> bool {
+    (s.starts_with("http://") || s.starts_with("https://"))
+        && s.len() > 8
+        && !s.chars().any(char::is_whitespace)
+}
+
 pub fn run_client() {
     env_logger::init();
     log::info!("client started");

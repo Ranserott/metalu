@@ -3,7 +3,9 @@
 //! These are the entry points invoked from JavaScript via `@tauri-apps/api/core`'s
 //! `invoke()`. They are intentionally thin: business logic lives in `client`.
 
-use crate::client::{discover_server, load_config, save_config, ClientConfig, DiscoveredServer};
+use crate::client::{
+    discover_server, load_config, save_config, validate_server_url, ClientConfig, DiscoveredServer,
+};
 use std::time::Duration;
 
 #[derive(serde::Serialize)]
@@ -53,12 +55,6 @@ pub fn set_client_config(config: ClientConfig) -> Result<(), String> {
         }
     }
     save_config(&config)
-}
-
-fn validate_server_url(s: &str) -> bool {
-    (s.starts_with("http://") || s.starts_with("https://"))
-        && s.len() > 8
-        && !s.chars().any(char::is_whitespace)
 }
 
 #[tauri::command]

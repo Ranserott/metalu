@@ -8,6 +8,7 @@
 //!   - `client`    : client-mode runtime (stub in Task 5 — wired in Task 6).
 
 pub mod client;
+pub mod client_app;
 pub mod commands;
 pub mod data_dir;
 pub mod discovery;
