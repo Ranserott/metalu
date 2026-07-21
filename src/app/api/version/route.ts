@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import packageJson from "../../../../package.json";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
-  // schemaVersion = latest migration filename or a static string for v1.
-  // For v1, hardcode a version stamp; bumping when migrations change is fine.
-  const schemaVersion = "v1.0.0";
+  const majorMinor = packageJson.version.split(".").slice(0, 2).join(".");
+
   return NextResponse.json({
     appVersion: packageJson.version,
-    schemaVersion,
+    schemaVersion: "v2.0.0",
+    compatibleVersion: `^${majorMinor}.`,
     runtime: process.env.METALU_RUNTIME === "tauri" ? "tauri" : "web",
   });
 }
