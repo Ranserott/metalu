@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Metalu Cliente</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 1.5rem;
+      }
+      .logo {
+        font-size: 2rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #1e293b;
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .status {
+        font-size: 1rem;
+        color: #94a3b8;
+        text-align: center;
+        max-width: 32rem;
+        line-height: 1.5;
+      }
+      .err {
+        color: #f87171;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="logo">Metalu</div>
+      <div class="spinner" id="spinner"></div>
+      <div class="status" id="status">Buscando servidor en la red...</div>
+    </div>
+    <script type="module">
+      const { invoke } = window.__TAURI__.core;
+      const status = document.getElementById("status");
+      const spinner = document.getElementById("spinner");
+
+      async function tick() {
+        try {
+          const url = await invoke("retry_discovery");
+          if (url) {
+            status.classList.remove("err");
+            status.textContent = "Conectando a " + url + " ...";
+            spinner.style.display = "none";
+            window.location.href = url;
+          }
+        } catch (e) {
+          status.classList.add("err");
+          status.textContent = "Error: " + e;
+        }
+      }
+
+      // Immediate attempt, then poll every 10s.
+      tick();
+      setInterval(tick, 10000);
+    </script>
+  </body>
+</html>
