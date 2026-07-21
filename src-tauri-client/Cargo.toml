@@ -3,7 +3,6 @@ name = "metalu-client"
 version = "0.2.0"
 edition = "2021"
 description = "Metalu Cliente — Tauri 2.x shell"
-default-run = "metalu-client"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
