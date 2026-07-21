@@ -107,8 +107,8 @@ pub fn validate_server_url(s: &str) -> bool {
 
 pub fn run_client() {
     env_logger::init();
-    log::info!("client started");
-    // The actual webview open happens in the Tauri command layer.
-    // This entrypoint is here so the binary can be built and exist.
-    std::thread::park();
+    log::info!("client starting");
+    if let Err(e) = crate::client_app::run() {
+        log::error!("client_app::run failed: {}", e);
+    }
 }

@@ -1,15 +1,15 @@
 //! Tauri Builder for client mode: discovery + webview navigation.
 //!
-//! The pure-ish helper `try_resolve_server_url` short-circuits to the
-//! cached URL when present and valid; otherwise it runs UDP discovery
-//! and persists the result on success. Both the Tauri setup callback
-//! (first launch) and the `retry_discovery` Tauri command (background
-//! polling from first_run.html) call into this helper.
+//! On startup the setup callback calls `try_resolve_server_url` and, if a
+//! URL is returned, navigates the webview to it. The `retry_discovery`
+//! Tauri command is invoked by `first_run.html`'s JS to poll every 10s
+//! when initial discovery fails.
 
 use crate::client::{
     build_server_url, discover_server, load_config, save_config, validate_server_url,
 };
 use std::time::Duration;
+use tauri::Manager;
 
 /// Returns the URL the webview should navigate to.
 ///
@@ -38,4 +38,41 @@ pub fn try_resolve_server_url(timeout: Duration) -> Option<String> {
         }
         Ok(None) | Err(_) => None,
     }
+}
+
+/// Tauri command invoked by `first_run.html`'s JS.
+///
+/// Returns the URL to navigate to, or `None` if discovery timed out.
+/// The JS calls this every 10s while the spinner is showing.
+#[tauri::command]
+pub async fn retry_discovery() -> Option<String> {
+    try_resolve_server_url(Duration::from_secs(5))
+}
+
+/// Build and run the client-mode Tauri app. Blocks until the window closes.
+pub fn run() -> tauri::Result<()> {
+    tauri::Builder::default()
+        .setup(|app| {
+            let window = app
+                .get_webview_window("main")
+                .ok_or("main webview window missing")?
+                .clone();
+
+            tauri::async_runtime::spawn(async move {
+                if let Some(url_str) = try_resolve_server_url(Duration::from_secs(5)) {
+                    match url::Url::parse(&url_str) {
+                        Ok(parsed) => {
+                            if let Err(e) = window.navigate(parsed) {
+                                log::error!("webview navigate failed: {}", e);
+                            }
+                        }
+                        Err(e) => log::error!("invalid server URL {:?}: {}", url_str, e),
+                    }
+                }
+            });
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![retry_discovery])
+        .run(tauri::generate_context!())
 }
