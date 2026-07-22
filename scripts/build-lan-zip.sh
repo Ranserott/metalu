@@ -28,44 +28,20 @@ OUT="$ROOT/metalu-lan.zip"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 OUT_STAMPED="$ROOT/metalu-lan-${VERSION}-${STAMP}.zip"
 
-# `zip` is available on macOS out of the box. On the CI runner (windows-latest)
-# the Git for Windows Bash ships `zip` too.
-if ! command -v zip >/dev/null 2>&1; then
-    echo "ERROR: 'zip' not found in PATH" >&2
-    echo "Install with: brew install zip (macOS)" >&2
+# `git archive` is available anywhere the source was cloned and avoids relying
+# on a separate zip binary, which is absent from GitHub's Windows runner.
+if ! command -v git >/dev/null 2>&1; then
+    printf '%s\n' "ERROR: 'git' not found in PATH" >&2
     exit 1
 fi
 
-echo "[zip] staging source from $ROOT"
-echo "[zip] excluding build/runtime artifacts"
+echo "[zip] archiving committed source from $ROOT"
 
-# Patterns to exclude. `zip -x` matches each file path against each pattern;
-# trailing /* keeps directories empty (zip still records the dir entry) which
-# is fine because the client never traverses them.
-zip -r "$OUT_STAMPED" . \
-    -x "node_modules/*" \
-    -x ".next/*" \
-    -x "dist-server/*" \
-    -x "dist/*" \
-    -x "metalu-db/*" \
-    -x ".git/*" \
-    -x ".github/*" \
-    -x "src-tauri/target/*" \
-    -x "src-tauri-client/target/*" \
-    -x "tests/*" \
-    -x "docs/*" \
-    -x "coverage/*" \
-    -x ".playwright-cli/*" \
-    -x "graphify-out/*" \
-    -x "*.log" \
-    -x ".DS_Store" \
-    -x "metalu-lan*.zip" \
-    -x "package-lock.json" \
-    >/dev/null
+git archive --format=zip --output="$OUT_STAMPED" HEAD
 
 # Also write the canonical (latest) filename so iniciar.bat paths and
 # download URLs don't need the timestamp.
 cp "$OUT_STAMPED" "$OUT"
 
 echo "[zip] wrote $OUT_STAMPED"
-ls -lh "$OUT_STAMPED" "$OUT"
+echo "[zip] wrote $OUT"
