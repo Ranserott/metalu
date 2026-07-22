@@ -48,3 +48,16 @@ src-tauri/Cargo.lock
 src-tauri/gen/
 src-tauri/.standalone-bundle/
 .env*.local
+
+# metalu-client is a binary app — commit Cargo.lock for reproducible client builds
+src-tauri-client/target/
+src-tauri-client/gen/
+
+# Neutralino build output
+/dist/
+/dist-server/*.zip
+
+# LAN delivery zip and per-installation state
+/metalu-lan.zip
+/metalu-lan-*.zip
+/.metalu-auth-secret

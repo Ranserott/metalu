@@ -1,0 +1,40 @@
+METALU v0.2.0 LAN — Guia de Inicio Rapido
+==========================================
+
+REQUISITO UNICO:
+  Node.js 20 LTS o superior
+  Descarga: https://nodejs.org  (elige la version LTS, instalador .msi)
+
+COMO INICIAR (Windows):
+  1. Descomprime esta carpeta en cualquier ubicacion (ej: C:\Metalu)
+  2. Doble click en "iniciar.bat"
+  3. Espera a que diga "Ready in ..." y abra tu navegador en:
+        http://localhost:3000
+  4. Ingresa con:
+        Usuario: admin
+        Contrasena: admin123
+
+PRIMERA VEZ (tarda 2-3 min):
+  - npm install instala todas las dependencias
+  - Prisma genera el cliente automaticamente
+  - PGlite crea la base de datos local (no necesita Postgres)
+
+USO NORMAL (despues de la primera vez):
+  - Solo doble click en iniciar.bat — todo arranca en segundos
+
+PARA DETENER:
+  - Presiona Ctrl+C en la ventana del servidor
+
+NOTAS:
+  - Los datos se guardan en la carpeta "metalu-db" (no borrar)
+  - Si cambias de PC, copia toda la carpeta incluyendo "metalu-db"
+  - El servidor escucha SOLO en localhost (no accesible desde otras PCs)
+  - Si necesitas acceso LAN, lee README-LAN.md
+
+SOPORTE:
+  - Si falla, abre una terminal aqui y ejecuta:
+        npm install
+        npx prisma generate
+        set METALU_RUNTIME=tauri
+        npm run dev
+  - Reporta el error que aparece en pantalla.

@@ -4,7 +4,10 @@ import path from "node:path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: [
+      "tests/**/*.test.ts",
+      "src/**/__tests__/**/*.test.ts",
+    ],
     setupFiles: ["./tests/setup.ts"],
     testTimeout: 20_000,
     hookTimeout: 20_000,

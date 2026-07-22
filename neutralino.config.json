@@ -1,0 +1,33 @@
+{
+  "applicationId": "cl.metalu.client",
+  "version": "0.2.0",
+  "defaultMode": "window",
+  "windowOptions": {
+    "title": "Metalu Cliente",
+    "width": 1280,
+    "height": 800,
+    "minWidth": 800,
+    "minHeight": 600,
+    "resizable": true,
+    "maximizable": true,
+    "exitProcessOnClose": true
+  },
+  "modes": {
+    "window": {
+      "borderless": false,
+      "alwaysOnTop": false,
+      "resizable": true
+    }
+  },
+  "documentRoot": "client/",
+  "url": "/index.html",
+  "icon": "client/icons/icon.png",
+  "nativeAllowList": [],
+  "globalVariables": {},
+  "cli": {
+    "binaryName": "metalu-client",
+    "resourcesPath": "client/",
+    "distributionPath": "dist",
+    "binaryVersion": "6.8.0"
+  }
+}

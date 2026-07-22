@@ -1,0 +1,44 @@
+METALU CLIENTE v0.2.0
+=====================
+
+Que es?
+--------
+Metalu Cliente es el programa que usan los operadores del taller para
+abrir el sistema Metalu desde una computadora de la red. Es un .exe
+que abre una ventana con la aplicacion, sin necesidad de escribir
+ninguna direccion en el navegador.
+
+Este cliente se conecta al servidor de Metalu cuya direccion IP esta
+configurada dentro del programa (192.168.1.21:3000). Si tu taller
+tiene una IP diferente, avisa al administrador del sistema para que
+genere una version nueva del cliente.
+
+Como se instala?
+----------------
+1. Copia el archivo "metalu-client.exe" a cualquier carpeta de la
+   computadora donde quieras usar Metalu (Escritorio, Mis Documentos,
+   una memoria USB, lo que prefieras).
+2. Listo. No requiere instalador ni permisos de administrador.
+
+Como se usa?
+------------
+1. Asegurate de que la computadora SERVIDOR este encendida y con
+   Metalu corriendo (ventana de CMD abierta con iniciar.cmd).
+2. Haz doble clic en "metalu-client.exe".
+3. La ventana se abre sola y te lleva al inicio de sesion de Metalu.
+
+Problemas?
+----------
+- Si la ventana queda mostrando "Conectando al servidor..." y no
+  avanza: verifica que el servidor este encendido y que las dos
+  computadoras esten conectadas al mismo router.
+- Si el servidor cambio de IP: avisa al administrador para que
+  regenere el cliente con la IP nueva.
+- La primera vez Windows puede mostrar una advertencia de SmartScreen
+  ("Editor desconocido"). Haz clic en "Mas informacion" y luego
+  "Ejecutar de todas formas". Esto pasa porque el .exe no tiene
+  certificado de firma digital.
+
+Desinstalar
+-----------
+Borra "metalu-client.exe". No deja rastro en el sistema.

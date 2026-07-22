@@ -65,4 +65,17 @@ export async function applyMigrations(): Promise<void> {
     }
     await pg.query(`INSERT INTO _metalu_migrations (id) VALUES ($1)`, [dir]);
   }
+
+  // AC:15 — recompute the v0.2.0 native sequence floors on EVERY migration
+  // pass so rows added after the initial migration (or restored from a
+  // backup) are reflected in the sequences. The migration's own setval()
+  // runs only once per data dir; this keeps the floor in sync with the
+  // current MAX(numeric). PGlite only — hosted Postgres owns its own
+  // sequence state and is left untouched.
+  const isPGlite =
+    process.env.METALU_RUNTIME === "tauri" || !!process.env.METALU_TEST_DATA_DIR;
+  if (isPGlite) {
+    const { recomputeSequenceFloors } = await import("./sequenceRecompute");
+    await recomputeSequenceFloors(pg);
+  }
 }

@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma/prisma";
+import { prisma, waitForTauriReady } from "@/lib/prisma/prisma";
 import { authConfigEdge } from "./auth.config.edge";
 
 export const authConfig = {
@@ -18,6 +18,8 @@ export const authConfig = {
           console.log("[AUTH] Missing username or password");
           return null;
         }
+
+        await waitForTauriReady();
 
         console.log("[AUTH] Trying to find user:", credentials.username);
 
