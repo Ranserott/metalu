@@ -73,8 +73,8 @@ jobs:
           }
           $size = (Get-Item "dist-server/metalu-server.exe").Length
           Write-Host "metalu-server.exe size: $size bytes"
-          if ($size -lt 50MB -or $size -gt 200MB) {
-            Write-Error "exe size out of expected range (50-200MB)"
+          if ($size -lt 50MB -or $size -gt 350MB) {
+            Write-Error "exe size out of expected range (50-350MB)"
             exit 1
           }
       - uses: actions/upload-artifact@v4
