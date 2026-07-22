@@ -95,6 +95,8 @@ jobs:
           path: dist-server
       - name: smoke test server
         run: |
+          $env:HOSTNAME = "0.0.0.0"
+          Write-Host "Starting server with HOSTNAME=$env:HOSTNAME"
           Start-Process -FilePath "dist-server/metalu-server.exe" -PassThru |
             Tee-Object -Variable proc
           Start-Sleep -Seconds 8
