@@ -24,116 +24,94 @@ jobs:
       - run: npx prisma generate
       - run: npx vitest run
 
-  build-server:
+  lan-zip:
     needs: unit-tests
     runs-on: windows-latest
-    # PKG v6.21.0 (pkg-fetch v3.6.4) hardcodes fetch from
-    # https://github.com/yao-pkg/pkg-fetch/releases/download/v3.6/node-v20.20.2-win-x64
-    # but that file is MISSING from the v3.6 release. The identical binary lives
-    # under v3.5 with the same sha256, so pre-populate the cache dir PKG looks in.
-    # Without this, PKG falls back to a from-source Node build that fails because
-    # the windows-latest runner ships only VS 2026 (PKG's build script only
-    # recognizes VS 2019/2022).
-    #
-    # PKG reads $PKG_CACHE_PATH before falling back to os.homedir() — we set it
-    # explicitly to a stable path because bash `$HOME` (C:\Users\runneradmin) and
-    # Node's os.homedir() can diverge (8.3 short names like RUNNER~1) and the
-    # pre-fetched file would otherwise be invisible to PKG.
-    env:
-      PKG_CACHE_PATH: C:/pkg-cache
-      PKG_NODE_PATH: C:/pkg-cache/v3.6/fetched-node-v20.20.2-win-x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: npm ci
-      # Same as unit-tests — see comment there.
-      - run: npx prisma generate
-      - name: pre-fetch PKG base binary from v3.5
+      - name: Build LAN zip
         shell: bash
-        run: |
-          mkdir -p "C:/pkg-cache/v3.6"
-          curl -fsSL \
-            -o "C:/pkg-cache/v3.6/fetched-node-v20.20.2-win-x64" \
-            "https://github.com/yao-pkg/pkg-fetch/releases/download/v3.5/node-v20.20.2-win-x64"
-          EXPECTED="f9b870a1b20c3bcf729a53112b6a72db65b050e4e6494d33ceab3413c507f01c"
-          ACTUAL=$(sha256sum "C:/pkg-cache/v3.6/fetched-node-v20.20.2-win-x64" | awk '{print $1}')
-          if [ "$ACTUAL" != "$EXPECTED" ]; then
-            echo "SHA mismatch: expected $EXPECTED got $ACTUAL"
-            exit 1
-          fi
-          echo "pre-fetched node-v20.20.2-win-x64 OK (sha256 verified)"
-      - run: npm run build:server
-      - name: assert exe exists
-        run: |
-          if (!(Test-Path "dist-server/metalu-server.exe")) {
-            Write-Error "metalu-server.exe not produced"
-            exit 1
-          }
-          $size = (Get-Item "dist-server/metalu-server.exe").Length
-          Write-Host "metalu-server.exe size: $size bytes"
-          if ($size -lt 50MB -or $size -gt 350MB) {
-            Write-Error "exe size out of expected range (50-350MB)"
-            exit 1
-          }
-      - uses: actions/upload-artifact@v4
+        run: npm run zip:lan
+      - name: Upload LAN zip artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: metalu-server
-          path: dist-server/metalu-server.exe
+          name: metalu-lan
+          path: metalu-lan-*.zip
 
-
-
-  smoke:
-    needs: [build-server]
+  lan-zip-smoke:
+    needs: lan-zip
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: metalu-server
+          name: metalu-lan
           path: dist-server
-      - name: smoke test server
+      - name: Extract zip to a fresh dir
+        shell: bash
         run: |
-          $env:HOSTNAME = "0.0.0.0"
-          $stdout = Join-Path $PWD "server.stdout.log"
-          $stderr = Join-Path $PWD "server.stderr.log"
-          Write-Host "Starting server with HOSTNAME=$env:HOSTNAME"
-          $proc = Start-Process -FilePath "dist-server/metalu-server.exe" `
-            -RedirectStandardOutput $stdout `
-            -RedirectStandardError $stderr `
-            -PassThru
-          $ready = $false
-          try {
-            for ($i = 1; $i -le 60; $i++) {
-              Start-Sleep -Seconds 1
-              if ($proc.HasExited) {
-                Write-Host "Server exited with code $($proc.ExitCode) after ${i}s"
-                break
-              }
-              try {
-                $r = Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing -TimeoutSec 2
-                if ($r.StatusCode -eq 200) {
-                  Write-Host "health check OK after ${i}s"
-                  $ready = $true
-                  break
-                }
-              } catch {
-                Write-Host "Waiting for health endpoint (${i}s)"
-              }
-            }
-            if (-not $ready) {
-              Write-Host "Server process exited: $($proc.HasExited)"
-              Write-Host "Listening sockets on port 3000:"
-              Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Format-List
-              Write-Host "=== server stdout ==="
-              if (Test-Path $stdout) { Get-Content $stdout }
-              Write-Host "=== server stderr ==="
-              if (Test-Path $stderr) { Get-Content $stderr }
-              throw "health check did not become ready within 60 seconds"
-            }
-          } finally {
-            if (-not $proc.HasExited) {
-              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-            }
-          }
+          mkdir -p smoke-target
+          # Expand-Archive works on both PowerShell and Git Bash contexts; we
+          # use the latter because the step uses `shell: bash`. `unzip` is
+          # shipped with Git for Windows.
+          unzip -q -o dist-server/metalu-lan-*.zip -d smoke-target
+          ls smoke-target
+          test -f smoke-target/iniciar.bat || (Write-Error "iniciar.bat missing"; exit 1)
+          test -f smoke-target/LEEME.txt || (Write-Error "LEEME.txt missing"; exit 1)
+          test -f smoke-target/package.json || (Write-Error "package.json missing"; exit 1)
+      - name: Smoke-test the LAN zip (fresh clone → dev server → health)
+        shell: bash
+        run: |
+          cd smoke-target
+
+          echo "[smoke] npm install"
+          npm install --no-audit --no-fund --loglevel=error
+
+          echo "[smoke] prisma generate"
+          npx prisma generate
+
+          echo "[smoke] starting dev server"
+          export METALU_RUNTIME=tauri
+          export HOSTNAME=0.0.0.0
+          # Spawn the dev server detached so we can curl /api/health while
+          # it boots. Redirect output to a log for post-mortem.
+          rm -f server.log
+          (npm run dev > server.log 2>&1 &)
+          SERVER_PID=$!
+          echo "[smoke] dev server pid=$SERVER_PID"
+
+          ready=false
+          for i in $(seq 1 90); do
+            sleep 2
+            if curl -fsS http://localhost:3000/api/health > health.json 2>/dev/null; then
+              echo "[smoke] health OK after ${i} ticks"
+              cat health.json
+              echo
+              ready=true
+              break
+            fi
+            # Detect crash early
+            if ! kill -0 $SERVER_PID 2>/dev/null; then
+              echo "[smoke] dev server process exited unexpectedly"
+              cat server.log
+              exit 1
+            fi
+            echo "[smoke] waiting for health endpoint (${i})"
+          done
+
+          if [ "$ready" != "true" ]; then
+            echo "[smoke] health endpoint did not become ready within 180s"
+            echo "=== last 100 lines of server.log ==="
+            tail -100 server.log
+            # Kill the still-running dev server
+            pkill -f "next dev" || true
+            pkill -f "next-server" || true
+            exit 1
+          fi
+
+          echo "[smoke] success — zip boots and serves /api/health on localhost"
+          pkill -f "next dev" || true
+          pkill -f "next-server" || true
