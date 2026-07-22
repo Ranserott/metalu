@@ -28,6 +28,17 @@ cp -R .next/static "$DIST/standalone/.next/static" 2>/dev/null || true
 mkdir -p "$DIST/standalone/public"
 cp -R public/. "$DIST/standalone/public/" 2>/dev/null || true
 
+node - "$DIST/standalone/server.js" <<'NODE'
+const fs = require("fs");
+const file = process.argv[2];
+const source = fs.readFileSync(file, "utf8");
+const target = "process.chdir(__dirname)";
+if (!source.includes(target)) {
+  throw new Error(`Cannot patch ${file}: generated chdir not found`);
+}
+fs.writeFileSync(file, source.replace(target, "if (!process.pkg) process.chdir(__dirname)"));
+NODE
+
 # Copy public files PKG needs at runtime (PGlite WASM is bundled via pkg.assets in package.json)
 mkdir -p "$DIST/standalone/public-files"
 cp -R node_modules/@electric-sql/pglite/dist "$DIST/standalone/public-files/pglite" 2>/dev/null || true
