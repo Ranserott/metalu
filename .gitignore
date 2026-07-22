@@ -52,3 +52,7 @@ src-tauri/.standalone-bundle/
 # metalu-client is a binary app — commit Cargo.lock for reproducible client builds
 src-tauri-client/target/
 src-tauri-client/gen/
+
+# Neutralino build output
+/dist/
+/dist-server/*.zip

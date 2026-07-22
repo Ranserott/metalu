@@ -13,11 +13,21 @@
     "exitProcessOnClose": true
   },
   "modes": {
-    "window": { "borderless": false, "alwaysOnTop": false, "resizable": true }
+    "window": {
+      "borderless": false,
+      "alwaysOnTop": false,
+      "resizable": true
+    }
   },
   "documentRoot": "client/",
   "url": "/index.html",
   "icon": "client/icons/icon.png",
   "nativeAllowList": [],
-  "globalVariables": {}
+  "globalVariables": {},
+  "cli": {
+    "binaryName": "metalu-client",
+    "resourcesPath": "client/",
+    "distributionPath": "dist",
+    "binaryVersion": "6.8.0"
+  }
 }
