@@ -160,8 +160,20 @@ jobs:
 
             Write-Host "[smoke] success - iniciar.bat serves health and logs in admin"
           } finally {
-            $process.Refresh()
-            if (-not $process.HasExited) {
-              taskkill.exe /PID $process.Id /T /F | Out-Null
+            # Best-effort teardown. On PowerShell 7.4+ a native command that
+            # writes to stderr and returns non-zero is promoted to a
+            # terminating error under `$ErrorActionPreference = 'Stop'`, so a
+            # benign "process already exited" from taskkill would otherwise
+            # fail the step even after the smoke assertions passed. Swallow
+            # cleanup noise here; a real failure in the try block still
+            # propagates as its own exception.
+            try {
+              $process.Refresh()
+              if (-not $process.HasExited) {
+                taskkill.exe /PID $process.Id /T /F 2>&1 | Out-Null
+              }
+            } catch {
+              Write-Host "[smoke] cleanup ignored: $($_.Exception.Message)"
             }
+            $global:LASTEXITCODE = 0
           }
