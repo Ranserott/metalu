@@ -41,6 +41,7 @@ jobs:
     # pre-fetched file would otherwise be invisible to PKG.
     env:
       PKG_CACHE_PATH: C:/pkg-cache
+      PKG_NODE_PATH: C:/pkg-cache/v3.6/fetched-node-v20.20.2-win-x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
