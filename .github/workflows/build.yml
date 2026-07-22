@@ -15,6 +15,13 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
+      # Prisma writes its generated client to src/generated/prisma (per
+      # generator block in prisma/schema.prisma), which is gitignored, so
+      # `npm ci` doesn't materialise it. Tests import from `@/generated/prisma`
+      # via the `@` alias in vitest.config.ts, so without this step the path
+      # is unresolvable and every test that touches Prisma errors with
+      # "Cannot find package '@/generated/prisma'".
+      - run: npx prisma generate
       - run: npx vitest run
 
   build-server:
@@ -26,6 +33,8 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
+      # Same as unit-tests — see comment there.
+      - run: npx prisma generate
       - run: npm run build:server
       - name: assert exe exists
         run: |
