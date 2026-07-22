@@ -1,3 +1,7 @@
+> **SUPERSEDED 2026-07-21** — This plan was abandoned mid-execution. The pivot to **Neutralino.js** (single-binary webview, hardcoded server IP `192.168.1.21:3000`, no UDP discovery) is documented in `docs/superpowers/plans/2026-07-21-neutralino-client.md`. All Phase 1–5 commits from this plan remain in git history but the work described below was **not** the final implementation. Do NOT follow this plan; refer to the Neutralino plan for the shipped approach. Kept here as a record of the abandoned direction.
+>
+> **Cleanup performed:** `src-tauri-client/` deleted, `src-tauri/src/client_app.rs` and `src-tauri/Cargo.toml` client block reverted, `.github/workflows/build.yml` `build-client` job removed, `bin/` Neutralino binaries live in repo root. Final Windows client at `dist-server/metalu-client-v0.2.0/metalu-client.exe` (1.7 MB PE32+ GUI x86-64, Neutralino v6.8.0 runtime).
+
 # Tauri Client Distribution Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
