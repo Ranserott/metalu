@@ -35,6 +35,27 @@ jobs:
       - run: npm ci
       # Same as unit-tests — see comment there.
       - run: npx prisma generate
+      # PKG v6.21.0 (pkg-fetch v3.6.4) hardcodes fetch from
+      # https://github.com/yao-pkg/pkg-fetch/releases/download/v3.6/node-v20.20.2-win-x64
+      # but that file is MISSING from the v3.6 release. The identical binary
+      # lives under v3.5 with the same sha256, so pre-populate the cache dir
+      # PKG looks in. Without this step PKG falls back to a from-source Node
+      # build that fails because the windows-latest runner ships only VS 2026
+      # (PKG's build script only recognizes VS 2019/2022).
+      - name: pre-fetch PKG base binary (v3.5 → v3.6 cache)
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.pkg-cache/v3.6"
+          curl -fsSL \
+            -o "$HOME/.pkg-cache/v3.6/fetched-node-v20.20.2-win-x64" \
+            "https://github.com/yao-pkg/pkg-fetch/releases/download/v3.5/node-v20.20.2-win-x64"
+          EXPECTED="f9b870a1b20c3bcf729a53112b6a72db65b050e4e6494d33ceab3413c507f01c"
+          ACTUAL=$(sha256sum "$HOME/.pkg-cache/v3.6/fetched-node-v20.20.2-win-x64" | awk '{print $1}')
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "SHA mismatch: expected $EXPECTED got $ACTUAL"
+            exit 1
+          fi
+          echo "pre-fetched node-v20.20.2-win-x64 OK (sha256 verified)"
       - run: npm run build:server
       - name: assert exe exists
         run: |
