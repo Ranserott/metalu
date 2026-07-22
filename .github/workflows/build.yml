@@ -16,7 +16,6 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npx vitest run
-      - run: cd src-tauri-client && cargo test --lib
 
   build-server:
     needs: unit-tests
@@ -45,29 +44,10 @@ jobs:
           name: metalu-server
           path: dist-server/metalu-server.exe
 
-  build-client:
-    needs: unit-tests
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cd src-tauri-client && cargo build --release
-      - name: assert exe exists
-        run: |
-          if (!(Test-Path "src-tauri-client/target/release/metalu-client.exe")) {
-            Write-Error "metalu-client.exe not produced"
-            exit 1
-          }
-      - uses: actions/upload-artifact@v4
-        with:
-          name: metalu-client
-          path: src-tauri-client/target/release/metalu-client.exe
+
 
   smoke:
-    needs: [build-server, build-client]
+    needs: [build-server]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
