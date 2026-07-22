@@ -58,60 +58,80 @@ jobs:
           # use the latter because the step uses `shell: bash`. `unzip` is
           # shipped with Git for Windows.
           unzip -q -o dist-server/metalu-lan-*.zip -d smoke-target
-          ls smoke-target
-          test -f smoke-target/iniciar.bat || (Write-Error "iniciar.bat missing"; exit 1)
-          test -f smoke-target/LEEME.txt || (Write-Error "LEEME.txt missing"; exit 1)
-          test -f smoke-target/package.json || (Write-Error "package.json missing"; exit 1)
-      - name: Smoke-test the LAN zip (fresh clone → dev server → health)
-        shell: bash
+          test -f smoke-target/iniciar.bat || (printf '%s\n' "iniciar.bat missing"; exit 1)
+          test -f smoke-target/LEEME.txt || (printf '%s\n' "LEEME.txt missing"; exit 1)
+          test -f smoke-target/package.json || (printf '%s\n' "package.json missing"; exit 1)
+      - name: Smoke-test the LAN zip through iniciar.bat
+        shell: pwsh
         run: |
-          cd smoke-target
+          $target = (Resolve-Path "smoke-target").Path
+          $stdout = Join-Path $target "server.log"
+          $stderr = Join-Path $target "server-error.log"
+          $process = Start-Process `
+            -FilePath "cmd.exe" `
+            -ArgumentList "/d", "/c", "iniciar.bat" `
+            -WorkingDirectory $target `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
 
-          echo "[smoke] npm install"
-          npm install --no-audit --no-fund --loglevel=error
+          try {
+            $ready = $false
+            for ($i = 1; $i -le 120; $i++) {
+              Start-Sleep -Seconds 2
+              $process.Refresh()
 
-          echo "[smoke] prisma generate"
-          npx prisma generate
+              if ($process.HasExited) {
+                Get-Content $stdout -ErrorAction SilentlyContinue
+                Get-Content $stderr -ErrorAction SilentlyContinue
+                throw "iniciar.bat exited before the server became ready"
+              }
 
-          echo "[smoke] starting dev server"
-          export METALU_RUNTIME=tauri
-          export HOSTNAME=0.0.0.0
-          # Spawn the dev server detached so we can curl /api/health while
-          # it boots. Redirect output to a log for post-mortem.
-          rm -f server.log
-          (npm run dev > server.log 2>&1 &)
-          SERVER_PID=$!
-          echo "[smoke] dev server pid=$SERVER_PID"
+              try {
+                Invoke-RestMethod "http://localhost:3000/api/health" -TimeoutSec 5 | Out-Null
+                Write-Host "[smoke] health OK after $i ticks"
+                $ready = $true
+                break
+              } catch {
+                Write-Host "[smoke] waiting for health endpoint ($i)"
+              }
+            }
 
-          ready=false
-          for i in $(seq 1 90); do
-            sleep 2
-            if curl -fsS http://localhost:3000/api/health > health.json 2>/dev/null; then
-              echo "[smoke] health OK after ${i} ticks"
-              cat health.json
-              echo
-              ready=true
-              break
-            fi
-            # Detect crash early
-            if ! kill -0 $SERVER_PID 2>/dev/null; then
-              echo "[smoke] dev server process exited unexpectedly"
-              cat server.log
-              exit 1
-            fi
-            echo "[smoke] waiting for health endpoint (${i})"
-          done
+            if (-not $ready) {
+              Get-Content $stdout -ErrorAction SilentlyContinue
+              Get-Content $stderr -ErrorAction SilentlyContinue
+              throw "health endpoint did not become ready within 240s"
+            }
 
-          if [ "$ready" != "true" ]; then
-            echo "[smoke] health endpoint did not become ready within 180s"
-            echo "=== last 100 lines of server.log ==="
-            tail -100 server.log
-            # Kill the still-running dev server
-            pkill -f "next dev" || true
-            pkill -f "next-server" || true
-            exit 1
-          fi
+            $secretPath = Join-Path $target ".metalu-auth-secret"
+            if (-not (Test-Path $secretPath)) {
+              throw "iniciar.bat did not create .metalu-auth-secret"
+            }
 
-          echo "[smoke] success — zip boots and serves /api/health on localhost"
-          pkill -f "next dev" || true
-          pkill -f "next-server" || true
+            $secret = (Get-Content $secretPath -Raw).Trim()
+            if ($secret -notmatch "^[0-9a-f]{64}$") {
+              throw "generated Auth.js secret is invalid"
+            }
+
+            $providers = Invoke-RestMethod "http://localhost:3000/api/auth/providers" -TimeoutSec 30
+            if ($null -eq $providers.credentials) {
+              throw "credentials auth provider is unavailable"
+            }
+
+            Start-Sleep -Seconds 1
+            $missingSecret = Select-String `
+              -Path $stdout, $stderr `
+              -Pattern "MissingSecret" `
+              -SimpleMatch `
+              -ErrorAction SilentlyContinue
+            if ($missingSecret) {
+              throw "Auth.js reported MissingSecret"
+            }
+
+            Write-Host "[smoke] success - iniciar.bat serves health and Auth.js"
+          } finally {
+            $process.Refresh()
+            if (-not $process.HasExited) {
+              taskkill.exe /PID $process.Id /T /F | Out-Null
+            }
+          }

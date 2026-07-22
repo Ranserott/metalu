@@ -42,6 +42,21 @@ if errorlevel 1 (
 )
 echo.
 
+REM Create and reuse a per-installation Auth.js secret
+node -e "const fs=require('node:fs'),crypto=require('node:crypto'),p='.metalu-auth-secret';let s='';try{s=fs.readFileSync(p,'utf8').trim()}catch{}if(!/^[0-9a-f]{64}$/.test(s)){s=crypto.randomBytes(32).toString('hex');fs.writeFileSync(p,s)}"
+if errorlevel 1 (
+    echo ERROR: no se pudo generar el secreto de autenticacion
+    pause
+    exit /b 1
+)
+for /f "usebackq delims=" %%s in (".metalu-auth-secret") do set "AUTH_SECRET=%%s"
+if not defined AUTH_SECRET (
+    echo ERROR: el secreto de autenticacion esta vacio
+    pause
+    exit /b 1
+)
+set "NEXTAUTH_SECRET=%AUTH_SECRET%"
+
 REM Start the dev server with PGlite (no Postgres needed)
 echo Iniciando Metalu en http://localhost:3000
 echo Usuario inicial: admin / admin123

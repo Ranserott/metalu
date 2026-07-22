@@ -30,6 +30,13 @@ echo "Generando Prisma client..."
 npx prisma generate
 echo
 
+# Create and reuse a per-installation Auth.js secret
+node -e "const fs=require('node:fs'),crypto=require('node:crypto'),p='.metalu-auth-secret';let s='';try{s=fs.readFileSync(p,'utf8').trim()}catch{}if(!/^[0-9a-f]{64}$/.test(s)){s=crypto.randomBytes(32).toString('hex');fs.writeFileSync(p,s)}"
+AUTH_SECRET="$(<".metalu-auth-secret")"
+export AUTH_SECRET
+export NEXTAUTH_SECRET="$AUTH_SECRET"
+chmod 600 ".metalu-auth-secret"
+
 echo "Iniciando Metalu en http://localhost:3000"
 echo "Usuario inicial: admin / admin123"
 echo

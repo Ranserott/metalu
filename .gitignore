@@ -57,6 +57,7 @@ src-tauri-client/gen/
 /dist/
 /dist-server/*.zip
 
-# LAN delivery zip (built locally + by CI)
+# LAN delivery zip and per-installation state
 /metalu-lan.zip
 /metalu-lan-*.zip
+/.metalu-auth-secret
