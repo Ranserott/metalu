@@ -96,14 +96,44 @@ jobs:
       - name: smoke test server
         run: |
           $env:HOSTNAME = "0.0.0.0"
+          $stdout = Join-Path $PWD "server.stdout.log"
+          $stderr = Join-Path $PWD "server.stderr.log"
           Write-Host "Starting server with HOSTNAME=$env:HOSTNAME"
-          Start-Process -FilePath "dist-server/metalu-server.exe" -PassThru |
-            Tee-Object -Variable proc
-          Start-Sleep -Seconds 8
+          $proc = Start-Process -FilePath "dist-server/metalu-server.exe" `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+          $ready = $false
           try {
-            $r = Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing
-            if ($r.StatusCode -ne 200) { throw "health check failed: $($r.StatusCode)" }
-            Write-Host "health check OK"
+            for ($i = 1; $i -le 60; $i++) {
+              Start-Sleep -Seconds 1
+              if ($proc.HasExited) {
+                Write-Host "Server exited with code $($proc.ExitCode) after ${i}s"
+                break
+              }
+              try {
+                $r = Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing -TimeoutSec 2
+                if ($r.StatusCode -eq 200) {
+                  Write-Host "health check OK after ${i}s"
+                  $ready = $true
+                  break
+                }
+              } catch {
+                Write-Host "Waiting for health endpoint (${i}s)"
+              }
+            }
+            if (-not $ready) {
+              Write-Host "Server process exited: $($proc.HasExited)"
+              Write-Host "Listening sockets on port 3000:"
+              Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Format-List
+              Write-Host "=== server stdout ==="
+              if (Test-Path $stdout) { Get-Content $stdout }
+              Write-Host "=== server stderr ==="
+              if (Test-Path $stderr) { Get-Content $stderr }
+              throw "health check did not become ready within 60 seconds"
+            }
           } finally {
-            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            if (-not $proc.HasExited) {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
           }
