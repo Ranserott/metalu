@@ -118,6 +118,36 @@ jobs:
               throw "credentials auth provider is unavailable"
             }
 
+            $webSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+            $csrf = Invoke-RestMethod `
+              "http://localhost:3000/api/auth/csrf" `
+              -WebSession $webSession `
+              -TimeoutSec 30
+            $signIn = Invoke-RestMethod `
+              "http://localhost:3000/api/auth/callback/credentials" `
+              -Method Post `
+              -WebSession $webSession `
+              -Headers @{ "X-Auth-Return-Redirect" = "1" } `
+              -ContentType "application/x-www-form-urlencoded" `
+              -Body @{
+                username = "admin"
+                password = "admin123"
+                csrfToken = $csrf.csrfToken
+                callbackUrl = "http://localhost:3000/dashboard"
+              } `
+              -TimeoutSec 30
+            if ($signIn.url -match "error=") {
+              throw "admin credentials login failed: $($signIn.url)"
+            }
+
+            $session = Invoke-RestMethod `
+              "http://localhost:3000/api/auth/session" `
+              -WebSession $webSession `
+              -TimeoutSec 30
+            if ($session.user.name -ne "admin") {
+              throw "authenticated session does not belong to admin"
+            }
+
             Start-Sleep -Seconds 1
             $missingSecret = Select-String `
               -Path $stdout, $stderr `
@@ -128,7 +158,7 @@ jobs:
               throw "Auth.js reported MissingSecret"
             }
 
-            Write-Host "[smoke] success - iniciar.bat serves health and Auth.js"
+            Write-Host "[smoke] success - iniciar.bat serves health and logs in admin"
           } finally {
             $process.Refresh()
             if (-not $process.HasExited) {

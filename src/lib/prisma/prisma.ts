@@ -3,39 +3,34 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { applyMigrations } from "./migrations";
 import { createTauriPrismaClient } from "./pglite";
+import { seedDefaultData } from "./seedDefaultData";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient;
-  __metaluMigrating?: Promise<void>;
+  __metaluReady?: Promise<void>;
 };
 
-// On the Tauri desktop runtime we boot PGlite empty — `prisma migrate deploy`
-// can't talk to PGlite, so we apply SQL files directly via `applyMigrations`
-// the first time anything touches the client. The Promise is memoised on
-// `globalThis` so concurrent callers (e.g. multiple route handlers on first
-// boot) share one migration run.
-//
-// Non-Tauri (dev/CI with a real Postgres) is unchanged: no migrations are
-// auto-applied, the operator runs `prisma migrate deploy` as usual.
-function ensureTauriMigrated(): Promise<void> {
+// On the Tauri desktop runtime we boot PGlite empty. Apply schema migrations
+// and required default data before route handlers issue their first query.
+function ensureTauriReady(client: PrismaClient): Promise<void> {
   if (process.env.METALU_RUNTIME !== "tauri") return Promise.resolve();
-  if (!globalForPrisma.__metaluMigrating) {
-    globalForPrisma.__metaluMigrating = applyMigrations().catch((err) => {
-      // Reset so a later request can retry once the operator fixes the cause.
-      globalForPrisma.__metaluMigrating = undefined;
-      console.error("[prisma] tauri migrations failed:", err);
-      throw err;
-    });
+  if (!globalForPrisma.__metaluReady) {
+    globalForPrisma.__metaluReady = applyMigrations()
+      .then(() => seedDefaultData(client))
+      .catch((err) => {
+        globalForPrisma.__metaluReady = undefined;
+        console.error("[prisma] tauri initialization failed:", err);
+        throw err;
+      });
   }
-  return globalForPrisma.__metaluMigrating;
+  return globalForPrisma.__metaluReady;
 }
 
 function createPrismaClient(): PrismaClient {
   if (process.env.METALU_RUNTIME === "tauri") {
-    // Fire-and-forget the migration kick — route handlers in /api/health
-    // (and the rest) await `waitForTauriReady` before their first query.
-    void ensureTauriMigrated();
-    return createTauriPrismaClient();
+    const client = createTauriPrismaClient();
+    void ensureTauriReady(client);
+    return client;
   }
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -56,5 +51,5 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
  * to decide when to open the webview).
  */
 export async function waitForTauriReady(): Promise<void> {
-  await ensureTauriMigrated();
+  await ensureTauriReady(prisma);
 }
