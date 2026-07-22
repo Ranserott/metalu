@@ -7,15 +7,14 @@
     "dev:server": "tsx scripts/dev-server.ts",
     "build": "next build --webpack",
     "build:server": "bash scripts/build-server-bundle.sh",
+    "build:client": "bash scripts/build-client-bundle.sh",
     "pdf:install-guide": "tsx scripts/generate-install-guide.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
-    "tauri": "tauri",
-    "tauri:build:client": "cargo tauri build --config src-tauri/tauri.client.conf.json --bundles none"
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -26,7 +25,6 @@
     "@prisma/client": "^7.8.0",
     "@react-pdf/renderer": "^4.5.1",
     "@tanstack/react-table": "^8.21.3",
-    "@tauri-apps/api": "^2.11.1",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -54,7 +52,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@tauri-apps/cli": "^2.11.1",
+    "@neutralinojs/neu": "^11.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.19.43",
     "@types/pg": "^8.20.0",
