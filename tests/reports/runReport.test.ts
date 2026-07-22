@@ -7,6 +7,8 @@ let clientId: string;
 let clientCode = "TEST-RUN-REPORT";
 
 beforeAll(async () => {
+  const { applyMigrations } = await import("@/lib/prisma/migrations");
+  await applyMigrations();
   await prisma.client.deleteMany({ where: { code: clientCode } });
   const client = await prisma.client.create({
     data: {

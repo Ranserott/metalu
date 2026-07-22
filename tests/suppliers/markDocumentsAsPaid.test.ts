@@ -8,6 +8,8 @@ let pendingId2: string;
 let alreadyPaidId: string;
 
 beforeAll(async () => {
+  const { applyMigrations } = await import("@/lib/prisma/migrations");
+  await applyMigrations();
   await prisma.supplier.deleteMany({ where: { code: "TEST-SUP-MP" } });
   const supplier = await prisma.supplier.create({
     data: { code: "TEST-SUP-MP", name: "Test Mark Paid", isActive: true },

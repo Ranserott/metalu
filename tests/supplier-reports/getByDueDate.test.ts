@@ -5,6 +5,8 @@ import { getDocumentsByDueDate } from "@/modules/suppliers-reports/services/supp
 let supplierId: string;
 
 beforeAll(async () => {
+  const { applyMigrations } = await import("@/lib/prisma/migrations");
+  await applyMigrations();
   // Clean up any leftover data from a previous run (cascade-deletes its documents)
   await prisma.supplier.deleteMany({ where: { code: "TEST-SUP-DUE" } });
 

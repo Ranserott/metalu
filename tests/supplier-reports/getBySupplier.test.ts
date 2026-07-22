@@ -6,6 +6,8 @@ let supplierId: string;
 let docId: string;
 
 beforeAll(async () => {
+  const { applyMigrations } = await import("@/lib/prisma/migrations");
+  await applyMigrations();
   // Clean up any leftover data from a previous failed run
   await prisma.supplierDocument.deleteMany({ where: { supplier: { code: "TEST-SUP-GRP" } } });
   await prisma.supplier.deleteMany({ where: { code: "TEST-SUP-GRP" } });
