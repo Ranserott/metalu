@@ -75,7 +75,10 @@
     "assets": [
       "node_modules/@electric-sql/pglite/dist/*.wasm",
       "node_modules/@electric-sql/pglite/dist/*.data",
-      "node_modules/@electric-sql/pglite/dist/*.tar.gz"
+      "node_modules/@electric-sql/pglite/dist/*.tar.gz",
+      "node_modules/@swc/helpers/cjs/**/*",
+      "node_modules/@swc/helpers/esm/**/*",
+      "node_modules/@swc/helpers/package.json"
     ]
   }
 }
